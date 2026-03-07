@@ -22,10 +22,13 @@ const INITIAL_STATE = {
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [gameMode, setGameMode] = useState('ai'); // 'ai' | 'human'
+  const [difficulty, setDifficulty] = useState('medium'); // 'easy' | 'medium' | 'hard'
   const [game, setGame] = useState(INITIAL_STATE);
   const [scores, setScores] = useState({ X: 0, O: 0 });
   const [startPlayer, setStartPlayer] = useState('X');
   const [isAIThinking, setIsAIThinking] = useState(false);
+
+  const AI_DEPTH = { easy: 1, medium: 3, hard: 5 };
 
   const handleCellClick = useCallback((index) => {
     setGame(prev => {
@@ -73,7 +76,7 @@ export default function App() {
 
     setIsAIThinking(true);
     const timer = setTimeout(() => {
-      const move = getAIMove(game.board, game.xMoves, game.oMoves);
+      const move = getAIMove(game.board, game.xMoves, game.oMoves, AI_DEPTH[difficulty] || 3, difficulty);
       if (move !== null) handleCellClick(move);
       setIsAIThinking(false);
     }, 550);
@@ -101,7 +104,7 @@ export default function App() {
     return (
       <>
         <ThemeToggle />
-        <IntroScreen onDone={(mode) => { setGameMode(mode); setShowIntro(false); }} />
+        <IntroScreen onDone={(mode, diff) => { setGameMode(mode); setDifficulty(diff || 'medium'); setShowIntro(false); }} />
       </>
     );
   }
@@ -113,7 +116,7 @@ export default function App() {
         className="min-h-screen flex flex-col items-center justify-center px-4 py-10 gap-7"
         style={{ backgroundColor: 'var(--color-bg)' }}
       >
-        <GameHeader gameMode={gameMode} />
+        <GameHeader gameMode={gameMode} difficulty={difficulty} />
 
         <TurnIndicator
           currentPlayer={game.currentPlayer}

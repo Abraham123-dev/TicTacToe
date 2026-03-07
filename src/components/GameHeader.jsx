@@ -1,7 +1,11 @@
 import { useState } from 'react';
 
-export default function GameHeader() {
+export default function GameHeader({ gameMode, difficulty }) {
   const [showRule, setShowRule] = useState(false);
+
+  const diffLabel = gameMode === 'ai' && difficulty
+    ? { easy: 'Easy', medium: 'Medium', hard: 'Hard' }[difficulty]
+    : null;
 
   return (
     <header className="flex flex-col items-center gap-1">
@@ -60,6 +64,24 @@ export default function GameHeader() {
         style={{ color: 'var(--color-subtle)', fontFamily: 'var(--font-sans)', letterSpacing: '0.01em' }}
       >
         Tic-tac-toe with a twist
+        {diffLabel && (
+          <span
+            style={{
+              marginLeft: 8,
+              padding: '1px 7px',
+              borderRadius: 4,
+              fontSize: '0.65rem',
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              color: 'var(--color-muted)',
+            }}
+          >
+            {diffLabel}
+          </span>
+        )}
       </p>
     </header>
   );
