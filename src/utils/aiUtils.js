@@ -118,3 +118,95 @@ export function getAIMove(board, xMoves, oMoves, depth = 5, difficulty = 'hard')
 
   return bestMove;
 }
+
+/**
+ * Analyses the board from X's (human player) perspective
+ * and returns a hint with the best move + reasoning.
+ */
+export function getHintForPlayer(board, xMoves, oMoves) {
+  const available = board.reduce((acc, v, i) => { if (v === null) acc.push(i); return acc; }, []);
+  if (available.length === 0) return null;
+
+  const CELL_NAMES = ['top-left', 'top-center', 'top-right', 'mid-left', 'center', 'mid-right', 'bottom-left', 'bottom-center', 'bottom-right'];
+  const depth = 6; // search deep for good advice
+
+  // Check if X can win in one move
+  for (const move of available) {
+    const { nextBoard } = placeMarkWithVanish(board, xMoves, oMoves, move, 'X');
+    const res = checkWinner(nextBoard);
+    if (res && res.winner === 'X') {
+      return { move, reason: `Place at ${CELL_NAMES[move]} — you win!`, type: 'win', confidence: 'high' };
+    }
+  }
+
+  // Check if O can win in one move (must block)
+  for (const move of available) {
+    const { nextBoard } = placeMarkWithVanish(board, xMoves, oMoves, move, 'O');
+    const res = checkWinner(nextBoard);
+    if (res && res.winner === 'O') {
+      return { move, reason: `Block ${CELL_NAMES[move]} — AI wins there next turn!`, type: 'block', confidence: 'high' };
+    }
+  }
+
+  // Use minimax from X's perspective (minimizing, since minimax scores for O)
+  let bestScore = Infinity;
+  let bestMove = available[0];
+
+  const scored = [];
+  for (const move of available) {
+    const { nextBoard, nextXMoves, nextOMoves } = placeMarkWithVanish(board, xMoves, oMoves, move, 'X');
+    // After X moves, it's O's turn (maximizing for O)
+    const score = minimax(nextBoard, nextXMoves, nextOMoves, true, depth, -Infinity, Infinity);
+    scored.push({ move, score });
+    if (score < bestScore) {
+      bestScore = score;
+      bestMove = move;
+    }
+  }
+
+  // Generate strategic reasoning
+  let reason = '';
+  let type = 'strategy';
+
+  // Count how many lines this move contributes to
+  const xLinesForMove = (m) => {
+    const { nextBoard } = placeMarkWithVanish(board, xMoves, oMoves, m, 'X');
+    let count = 0;
+    for (const [a, b, c] of WIN_LINES) {
+      const vals = [nextBoard[a], nextBoard[b], nextBoard[c]];
+      const xc = vals.filter(v => v === 'X').length;
+      const oc = vals.filter(v => v === 'O').length;
+      if (xc >= 2 && oc === 0) count++;
+    }
+    return count;
+  };
+
+  const threats = xLinesForMove(bestMove);
+  const vanishInfo = xMoves.length >= 3
+    ? ` Your oldest piece (${CELL_NAMES[xMoves[0]]}) will vanish.`
+    : '';
+
+  if (threats >= 2) {
+    reason = `Play ${CELL_NAMES[bestMove]} — creates a fork (${threats} threats)! AI can only block one.${vanishInfo}`;
+    type = 'fork';
+  } else if (bestMove === 4 && board[4] === null) {
+    reason = `Take center — controls the most lines.${vanishInfo}`;
+  } else if ([0, 2, 6, 8].includes(bestMove)) {
+    reason = `Take ${CELL_NAMES[bestMove]} corner — builds diagonal pressure.${vanishInfo}`;
+  } else {
+    reason = `Play ${CELL_NAMES[bestMove]} — best position to set up a future fork.${vanishInfo}`;
+  }
+
+  // Check if AI's oldest piece is in a useful line (extra tip)
+  let bonusTip = '';
+  if (oMoves.length >= 3) {
+    bonusTip = ` The AI's ${CELL_NAMES[oMoves[0]]} piece vanishes soon — plan around it.`;
+  }
+
+  return {
+    move: bestMove,
+    reason: reason + bonusTip,
+    type,
+    confidence: Math.abs(bestScore) > 500 ? 'high' : threats >= 2 ? 'high' : 'medium',
+  };
+}

@@ -1,4 +1,4 @@
-export default function Cell({ value, isVanishing, isOpponentVanishing, isWinning, onClick, disabled }) {
+export default function Cell({ value, isVanishing, isOpponentVanishing, isWinning, isHinted, onClick, disabled }) {
   const isEmpty = !value;
 
   let cellStyle = {
@@ -23,6 +23,10 @@ export default function Cell({ value, isVanishing, isOpponentVanishing, isWinnin
     cellStyle.borderStyle = 'dashed';
     textStyle.color = value === 'X' ? 'var(--color-x)' : 'var(--color-o)';
     textStyle.opacity = 0.55;
+  } else if (isHinted && isEmpty) {
+    cellStyle.backgroundColor = 'var(--color-hint-bg)';
+    cellStyle.borderColor = 'var(--color-hint-border)';
+    cellStyle.animation = 'hint-pulse 1.5s ease-in-out infinite';
   } else if (value === 'X') {
     cellStyle.borderColor = 'var(--color-border-strong)';
     textStyle.color = 'var(--color-x)';
@@ -75,6 +79,21 @@ export default function Cell({ value, isVanishing, isOpponentVanishing, isWinnin
           style={{ color: 'var(--color-subtle)', fontFamily: 'var(--font-sans)' }}
         >
           soon
+        </span>
+      )}
+
+      {isHinted && isEmpty && (
+        <span
+          className="absolute text-[7px] font-bold tracking-wider uppercase"
+          style={{
+            color: 'var(--color-hint-text)',
+            fontFamily: 'var(--font-sans)',
+            bottom: 3,
+            right: 5,
+            animation: 'fade-in 0.3s ease-out',
+          }}
+        >
+          hint
         </span>
       )}
     </button>
