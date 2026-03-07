@@ -1,4 +1,4 @@
-export default function Cell({ value, isVanishing, isWinning, onClick, disabled }) {
+export default function Cell({ value, isVanishing, isOpponentVanishing, isWinning, onClick, disabled }) {
   const isEmpty = !value;
 
   let cellStyle = {
@@ -18,6 +18,11 @@ export default function Cell({ value, isVanishing, isWinning, onClick, disabled 
     cellStyle.borderColor = 'var(--color-warn-border)';
     textStyle.color = value === 'X' ? 'var(--color-x)' : 'var(--color-o)';
     textStyle.opacity = 0.45;
+  } else if (isOpponentVanishing) {
+    cellStyle.borderColor = 'var(--color-border-strong)';
+    cellStyle.borderStyle = 'dashed';
+    textStyle.color = value === 'X' ? 'var(--color-x)' : 'var(--color-o)';
+    textStyle.opacity = 0.55;
   } else if (value === 'X') {
     cellStyle.borderColor = 'var(--color-border-strong)';
     textStyle.color = 'var(--color-x)';
@@ -61,6 +66,15 @@ export default function Cell({ value, isVanishing, isWinning, onClick, disabled 
           style={{ color: 'var(--color-warn)', fontFamily: 'var(--font-sans)' }}
         >
           next
+        </span>
+      )}
+
+      {isOpponentVanishing && !isVanishing && (
+        <span
+          className="absolute bottom-1 right-1.5 text-[7px] font-medium tracking-wide uppercase"
+          style={{ color: 'var(--color-subtle)', fontFamily: 'var(--font-sans)' }}
+        >
+          soon
         </span>
       )}
     </button>
