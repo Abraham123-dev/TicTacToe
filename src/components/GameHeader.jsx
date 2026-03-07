@@ -1,7 +1,16 @@
 import { useState } from 'react';
+import GameSettingsPanel from './GameSettingsPanel';
 
-export default function GameHeader({ gameMode, difficulty }) {
+export default function GameHeader({
+  gameMode,
+  difficulty,
+  onModeChange,
+  onDifficultyChange,
+  onNewGame,
+  onBackToIntro,
+}) {
   const [showRule, setShowRule] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const diffLabel = gameMode === 'ai' && difficulty
     ? { easy: 'Easy', medium: 'Medium', hard: 'Hard' }[difficulty]
@@ -56,6 +65,42 @@ export default function GameHeader({ gameMode, difficulty }) {
               <span style={{ color: 'var(--color-warn)', fontWeight: 500 }}> Plan ahead.</span>
             </div>
           )}
+        </div>
+
+        {/* Settings gear */}
+        <div className="relative">
+          <button
+            aria-label="Game settings"
+            onClick={() => setShowSettings(s => !s)}
+            className="flex items-center justify-center w-[22px] h-[22px] rounded-full border transition-all duration-150"
+            style={{
+              borderColor: showSettings ? 'var(--color-text)' : 'var(--color-border-strong)',
+              color: showSettings ? 'var(--color-text)' : 'var(--color-muted)',
+              backgroundColor: 'var(--color-surface)',
+              cursor: 'pointer',
+              fontSize: 12,
+              lineHeight: 1,
+            }}
+            onMouseEnter={e => {
+              if (!showSettings) e.currentTarget.style.borderColor = 'var(--color-text)';
+            }}
+            onMouseLeave={e => {
+              if (!showSettings) e.currentTarget.style.borderColor = 'var(--color-border-strong)';
+            }}
+          >
+            ⚙
+          </button>
+
+          <GameSettingsPanel
+            isOpen={showSettings}
+            onClose={() => setShowSettings(false)}
+            gameMode={gameMode}
+            onModeChange={onModeChange}
+            difficulty={difficulty}
+            onDifficultyChange={onDifficultyChange}
+            onNewGame={onNewGame}
+            onBackToIntro={onBackToIntro}
+          />
         </div>
       </div>
 

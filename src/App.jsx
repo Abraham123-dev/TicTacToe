@@ -6,6 +6,7 @@ import GameStatus from './components/GameStatus';
 import ScoreBoard from './components/ScoreBoard';
 import IntroScreen from './components/IntroScreen';
 import ThemeToggle from './components/ThemeToggle';
+import ToastContainer, { showToast } from './components/Toast';
 import { checkWinner, placeMarkWithVanish } from './utils/gameUtils';
 import { getAIMove } from './utils/aiUtils';
 
@@ -92,8 +93,46 @@ export default function App() {
     setIsAIThinking(false);
   }, [startPlayer]);
 
+  const handleNewGame = useCallback(() => {
+    setStartPlayer('X');
+    setGame({ ...INITIAL_STATE });
+    setIsAIThinking(false);
+    showToast('New game started', 'info');
+  }, []);
+
+  const handleModeChange = useCallback((newMode) => {
+    if (newMode === gameMode) return;
+    setGameMode(newMode);
+    setStartPlayer('X');
+    setGame({ ...INITIAL_STATE });
+    setIsAIThinking(false);
+    showToast(
+      newMode === 'ai' ? 'Switched to vs AI' : 'Switched to vs Friend',
+      'info',
+    );
+  }, [gameMode]);
+
+  const handleDifficultyChange = useCallback((newDiff) => {
+    if (newDiff === difficulty) return;
+    setDifficulty(newDiff);
+    setStartPlayer('X');
+    setGame({ ...INITIAL_STATE });
+    setIsAIThinking(false);
+    const labels = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+    showToast(`Difficulty → ${labels[newDiff]}`, 'info');
+  }, [difficulty]);
+
+  const handleBackToIntro = useCallback(() => {
+    setShowIntro(true);
+    setGame({ ...INITIAL_STATE });
+    setScores({ X: 0, O: 0 });
+    setStartPlayer('X');
+    setIsAIThinking(false);
+  }, []);
+
   const handleResetScores = useCallback(() => {
     setScores({ X: 0, O: 0 });
+    showToast('Scores reset', 'info');
   }, []);
 
   const gameOver = !!(game.winner || game.isDraw);
@@ -104,6 +143,7 @@ export default function App() {
     return (
       <>
         <ThemeToggle />
+        <ToastContainer />
         <IntroScreen onDone={(mode, diff) => { setGameMode(mode); setDifficulty(diff || 'medium'); setShowIntro(false); }} />
       </>
     );
@@ -112,11 +152,19 @@ export default function App() {
   return (
     <>
       <ThemeToggle />
+      <ToastContainer />
       <main
         className="min-h-screen flex flex-col items-center justify-center px-4 py-10 gap-7"
         style={{ backgroundColor: 'var(--color-bg)' }}
       >
-        <GameHeader gameMode={gameMode} difficulty={difficulty} />
+        <GameHeader
+          gameMode={gameMode}
+          difficulty={difficulty}
+          onModeChange={handleModeChange}
+          onDifficultyChange={handleDifficultyChange}
+          onNewGame={handleNewGame}
+          onBackToIntro={handleBackToIntro}
+        />
 
         <TurnIndicator
           currentPlayer={game.currentPlayer}
