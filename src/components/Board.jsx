@@ -1,6 +1,6 @@
 import Cell from './Cell';
 
-export default function Board({ board, xMoves, oMoves, currentPlayer, winningLine, gameOver, onCellClick }) {
+export default function Board({ board, xMoves, oMoves, currentPlayer, winningLine, gameOver, onCellClick, hintCell }) {
   // Current player's piece that will vanish on their move
   const vanishingIndex = gameOver ? null : (
     currentPlayer === 'X' && xMoves.length >= 3 ? xMoves[0] :
@@ -33,6 +33,7 @@ export default function Board({ board, xMoves, oMoves, currentPlayer, winningLin
           isVanishing={vanishingIndex === index}
           isOpponentVanishing={opponentVanishIndex === index}
           isWinning={winningLine ? winningLine.includes(index) : false}
+          isHinted={hintCell === index}
           onClick={() => onCellClick(index)}
           disabled={gameOver}
         />

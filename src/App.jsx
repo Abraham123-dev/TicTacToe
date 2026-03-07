@@ -7,8 +7,9 @@ import ScoreBoard from './components/ScoreBoard';
 import IntroScreen from './components/IntroScreen';
 import ThemeToggle from './components/ThemeToggle';
 import ToastContainer, { showToast } from './components/Toast';
+import HintAssistant from './components/HintAssistant';
 import { checkWinner, placeMarkWithVanish } from './utils/gameUtils';
-import { getAIMove } from './utils/aiUtils';
+import { getAIMove, getHintForPlayer } from './utils/aiUtils';
 
 const INITIAL_STATE = {
   board: Array(9).fill(null),
@@ -28,10 +29,13 @@ export default function App() {
   const [scores, setScores] = useState({ X: 0, O: 0 });
   const [startPlayer, setStartPlayer] = useState('X');
   const [isAIThinking, setIsAIThinking] = useState(false);
+  const [hint, setHint] = useState(null);
+  const [isHintThinking, setIsHintThinking] = useState(false);
 
   const AI_DEPTH = { easy: 1, medium: 3, hard: 5 };
 
   const handleCellClick = useCallback((index) => {
+    setHint(null); // clear hint on any move
     setGame(prev => {
       if (prev.board[index] !== null || prev.winner || prev.isDraw) return prev;
 
@@ -97,6 +101,7 @@ export default function App() {
     setStartPlayer('X');
     setGame({ ...INITIAL_STATE });
     setIsAIThinking(false);
+    setHint(null);
     showToast('New game started', 'info');
   }, []);
 
@@ -106,6 +111,7 @@ export default function App() {
     setStartPlayer('X');
     setGame({ ...INITIAL_STATE });
     setIsAIThinking(false);
+    setHint(null);
     showToast(
       newMode === 'ai' ? 'Switched to vs AI' : 'Switched to vs Friend',
       'info',
@@ -118,6 +124,7 @@ export default function App() {
     setStartPlayer('X');
     setGame({ ...INITIAL_STATE });
     setIsAIThinking(false);
+    setHint(null);
     const labels = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
     showToast(`Difficulty → ${labels[newDiff]}`, 'info');
   }, [difficulty]);
@@ -128,11 +135,28 @@ export default function App() {
     setScores({ X: 0, O: 0 });
     setStartPlayer('X');
     setIsAIThinking(false);
+    setHint(null);
   }, []);
 
   const handleResetScores = useCallback(() => {
     setScores({ X: 0, O: 0 });
     showToast('Scores reset', 'info');
+  }, []);
+
+  const handleRequestHint = useCallback(() => {
+    if (game.winner || game.isDraw) return;
+    if (game.currentPlayer !== 'X') return;
+    setIsHintThinking(true);
+    // Small delay so the "Analyzing" state is visible
+    setTimeout(() => {
+      const result = getHintForPlayer(game.board, game.xMoves, game.oMoves);
+      setHint(result);
+      setIsHintThinking(false);
+    }, 400);
+  }, [game]);
+
+  const handleDismissHint = useCallback(() => {
+    setHint(null);
   }, []);
 
   const gameOver = !!(game.winner || game.isDraw);
@@ -183,7 +207,19 @@ export default function App() {
           winningLine={game.winningLine}
           gameOver={boardDisabled}
           onCellClick={handleCellClick}
+          hintCell={hint ? hint.move : null}
         />
+
+        {/* AI Coach — show when vs AI, it's player's turn, and game is not over */}
+        {gameMode === 'ai' && game.currentPlayer === 'X' && !gameOver && (
+          <HintAssistant
+            hint={hint}
+            onRequestHint={handleRequestHint}
+            onDismiss={handleDismissHint}
+            disabled={false}
+            isThinking={isHintThinking}
+          />
+        )}
 
         {gameOver && (
           <GameStatus
