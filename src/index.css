@@ -1,35 +1,58 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* ── Light theme (default) ── */
 @theme {
-  /* Backgrounds */
-  --color-bg: #f2f2ed;
-  --color-surface: #ffffff;
-  --color-cell: #ffffff;
-  --color-cell-hover: #f7f7f4;
+  --color-bg: #e8e8e2;
+  --color-surface: #efefe9;
+  --color-cell: #efefe9;
+  --color-cell-hover: #e4e4de;
 
-  /* Borders */
-  --color-border: #deded6;
-  --color-border-strong: #b8b8b0;
+  --color-border: #d0d0c8;
+  --color-border-strong: #a8a8a0;
 
-  /* Marks */
   --color-x: #1a1a1a;
   --color-o: #2563eb;
 
-  /* States */
   --color-warn: #92400e;
   --color-warn-bg: #fef3c7;
   --color-warn-border: #fcd34d;
+
   --color-win-bg: #dcfce7;
   --color-win-border: #86efac;
   --color-win-text: #15803d;
 
-  /* Text */
   --color-text: #1a1a1a;
   --color-muted: #6b7280;
   --color-subtle: #9ca3af;
 
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Geist', system-ui, sans-serif;
+}
+
+/* ── Dark theme ── */
+[data-theme="dark"] {
+  --color-bg: #111111;
+  --color-surface: #1c1c1c;
+  --color-cell: #1c1c1c;
+  --color-cell-hover: #252525;
+
+  --color-border: #2c2c2c;
+  --color-border-strong: #3d3d3d;
+
+  --color-x: #e5e5e5;
+  --color-o: #60a5fa;
+
+  --color-warn: #fb923c;
+  --color-warn-bg: #1c1000;
+  --color-warn-border: #78350f;
+
+  --color-win-bg: #052e16;
+  --color-win-border: #166534;
+  --color-win-text: #4ade80;
+
+  --color-text: #ededed;
+  --color-muted: #737373;
+  --color-subtle: #525252;
 }
 
 @layer base {
@@ -50,6 +73,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.5;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 }
 
@@ -70,16 +94,6 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
-@keyframes progress-fill {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
-
 /* ── Game animations ── */
 @keyframes mark-pop {
   0%   { transform: scale(0.5); opacity: 0; }
@@ -95,4 +109,9 @@
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(0.7); }
 }
