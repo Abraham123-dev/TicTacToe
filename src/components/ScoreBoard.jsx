@@ -1,4 +1,4 @@
-export default function ScoreBoard({ scores, onReset }) {
+export default function ScoreBoard({ scores, onReset, gameMode }) {
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="flex items-center gap-6">
@@ -30,7 +30,7 @@ export default function ScoreBoard({ scores, onReset }) {
             className="text-[10px] font-medium uppercase tracking-widest"
             style={{ color: 'var(--color-subtle)', fontFamily: 'var(--font-sans)' }}
           >
-            O
+            {gameMode === 'ai' ? 'AI' : 'O'}
           </span>
           <span
             className="font-bold tabular-nums"

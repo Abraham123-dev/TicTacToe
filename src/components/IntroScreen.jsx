@@ -112,15 +112,46 @@ function StepRule2() {
   );
 }
 
-function StepReady() {
+function StepReady({ mode, onModeChange }) {
   return (
-    <div key="ready" style={{ animation: 'step-enter 0.4s ease-out' }} className="flex flex-col items-center gap-4 text-center">
-      <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)' }}>
-        You're ready.
-      </h2>
-      <p style={{ fontSize: '0.9rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)', maxWidth: 240, lineHeight: 1.6 }}>
-        Think three moves ahead. Your opponent's block won't last forever — and neither will yours.
-      </p>
+    <div key="ready" style={{ animation: 'step-enter 0.4s ease-out' }} className="flex flex-col items-center gap-6 text-center">
+      <div className="flex flex-col gap-1 items-center">
+        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)' }}>
+          Who are you playing against?
+        </h2>
+        <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)' }}>
+          You play as X
+        </p>
+      </div>
+
+      {/* Mode selector */}
+      <div
+        className="flex rounded-lg border overflow-hidden"
+        style={{ borderColor: 'var(--color-border)' }}
+      >
+        {[
+          { value: 'ai',    label: 'vs AI',     sub: 'Minimax engine' },
+          { value: 'human', label: 'vs Friend',  sub: 'Same device' },
+        ].map(opt => (
+          <button
+            key={opt.value}
+            onClick={() => onModeChange(opt.value)}
+            className="flex flex-col items-center px-6 py-3 text-sm font-medium transition-colors duration-100"
+            style={{
+              fontFamily: 'var(--font-sans)',
+              backgroundColor: mode === opt.value ? 'var(--color-text)' : 'var(--color-surface)',
+              color: mode === opt.value ? 'var(--color-bg)' : 'var(--color-muted)',
+              border: 'none',
+              cursor: 'pointer',
+              borderRight: opt.value === 'ai' ? '1px solid var(--color-border)' : 'none',
+              minWidth: 110,
+            }}
+          >
+            <span style={{ fontWeight: 600 }}>{opt.label}</span>
+            <span style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 2 }}>{opt.sub}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -173,6 +204,7 @@ function StepIntro() {
 
 export default function IntroScreen({ onDone }) {
   const [stepIndex, setStepIndex] = useState(0);
+  const [mode, setMode] = useState('ai');
   const step = STEPS[stepIndex];
   const isLast = stepIndex === STEPS.length - 1;
 
@@ -186,7 +218,7 @@ export default function IntroScreen({ onDone }) {
 
   function handleNext() {
     if (isLast) {
-      onDone();
+      onDone(mode);
     } else {
       setStepIndex(i => i + 1);
     }
@@ -210,7 +242,7 @@ export default function IntroScreen({ onDone }) {
         {step === 'hook'   && <StepHook />}
         {step === 'rule-1' && <StepRule1 />}
         {step === 'rule-2' && <StepRule2 />}
-        {step === 'ready'  && <StepReady />}
+        {step === 'ready'  && <StepReady mode={mode} onModeChange={setMode} />}
       </div>
 
       {/* Navigation — hidden on intro (auto-advances) */}
@@ -261,7 +293,7 @@ export default function IntroScreen({ onDone }) {
           {/* Skip link — only on non-last content steps */}
           {!isLast && (
             <button
-              onClick={onDone}
+              onClick={() => onDone(mode)}
               className="text-xs transition-colors duration-100"
               style={{
                 color: 'var(--color-subtle)',
