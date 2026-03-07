@@ -7,6 +7,7 @@ const STEPS = [
   'hook',    // what is this game?
   'rule-1',  // you can only hold 3 pieces
   'rule-2',  // oldest piece vanishes
+  'tip',     // you can change settings mid-game
   'ready',   // let's play
 ];
 
@@ -107,6 +108,138 @@ function StepRule2() {
         <p style={{ fontSize: '0.9rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)', maxWidth: 280, lineHeight: 1.6 }}>
           Place a 4th piece and your <strong style={{ color: 'var(--color-warn)' }}>oldest mark disappears</strong>. No position is ever safe.
         </p>
+      </div>
+    </div>
+  );
+}
+
+function StepTip() {
+  return (
+    <div key="tip" style={{ animation: 'step-enter 0.4s ease-out' }} className="flex flex-col items-center gap-6 text-center">
+      {/* Mock header with gear icon */}
+      <div
+        className="flex items-center gap-3 px-5 py-3 rounded-xl border"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          borderColor: 'var(--color-border)',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '1rem',
+            fontWeight: 700,
+            color: 'var(--color-text)',
+            fontFamily: 'var(--font-sans)',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          Vanishing Moves
+        </span>
+
+        <span
+          className="flex items-center justify-center rounded-full border"
+          style={{
+            width: 18,
+            height: 18,
+            borderColor: 'var(--color-border-strong)',
+            color: 'var(--color-muted)',
+            backgroundColor: 'var(--color-surface)',
+            fontSize: 10,
+            fontWeight: 600,
+            fontFamily: 'var(--font-sans)',
+          }}
+        >
+          ?
+        </span>
+
+        {/* Gear icon — the target */}
+        <div className="relative">
+          <span
+            className="flex items-center justify-center rounded-full border"
+            style={{
+              width: 22,
+              height: 22,
+              borderColor: 'var(--color-text)',
+              color: 'var(--color-text)',
+              backgroundColor: 'var(--color-surface)',
+              fontSize: 12,
+              lineHeight: 1,
+              animation: 'pulse-gear 2s ease-in-out infinite',
+            }}
+          >
+            ⚙
+          </span>
+
+          {/* Animated bouncing arrow */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 30,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              animation: 'bounce-arrow 1s ease-in-out infinite',
+              color: 'var(--color-text)',
+              fontSize: 18,
+              fontWeight: 700,
+              lineHeight: 1,
+            }}
+          >
+            ↑
+          </div>
+        </div>
+      </div>
+
+      {/* Tip text */}
+      <div className="flex flex-col gap-3 items-center">
+        <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)', lineHeight: 1.2 }}>
+          Change settings anytime
+        </h2>
+        <p style={{ fontSize: '0.9rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)', maxWidth: 280, lineHeight: 1.6 }}>
+          Tap the <strong style={{ color: 'var(--color-text)' }}>⚙ gear icon</strong> during a game to switch difficulty, change opponent, or start fresh.
+        </p>
+      </div>
+
+      {/* Feature list */}
+      <div
+        className="flex flex-col gap-2 text-left"
+        style={{ maxWidth: 240 }}
+      >
+        {[
+          { icon: '↻', text: 'Start a new game' },
+          { icon: '📊', text: 'Switch difficulty level' },
+          { icon: '👥', text: 'Change opponent (AI or friend)' },
+        ].map((item, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-3"
+            style={{
+              animation: `fade-in 0.3s ease-out ${200 + i * 120}ms both`,
+            }}
+          >
+            <span
+              className="flex items-center justify-center rounded-md"
+              style={{
+                width: 28,
+                height: 28,
+                backgroundColor: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                fontSize: 13,
+                flexShrink: 0,
+              }}
+            >
+              {item.icon}
+            </span>
+            <span
+              style={{
+                fontSize: '0.82rem',
+                color: 'var(--color-muted)',
+                fontFamily: 'var(--font-sans)',
+              }}
+            >
+              {item.text}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -287,6 +420,7 @@ export default function IntroScreen({ onDone }) {
         {step === 'hook'   && <StepHook />}
         {step === 'rule-1' && <StepRule1 />}
         {step === 'rule-2' && <StepRule2 />}
+        {step === 'tip'    && <StepTip />}
         {step === 'ready'  && <StepReady mode={mode} onModeChange={setMode} difficulty={difficulty} onDifficultyChange={setDifficulty} />}
       </div>
 
