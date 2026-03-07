@@ -80,9 +80,10 @@ function minimax(board, xMoves, oMoves, isMaximizing, depth, alpha, beta) {
 
 /**
  * Returns the best cell index for the AI (playing as O).
- * depth 5 = strong play; depth 3 = easier.
+ * depth controls strength: 1 = easy, 3 = medium, 5 = hard.
+ * difficulty ('easy'|'medium'|'hard') adds randomness on lower levels.
  */
-export function getAIMove(board, xMoves, oMoves, depth = 5) {
+export function getAIMove(board, xMoves, oMoves, depth = 5, difficulty = 'hard') {
   const available = board.reduce((acc, v, i) => { if (v === null) acc.push(i); return acc; }, []);
   if (available.length === 0) return null;
 
@@ -91,6 +92,16 @@ export function getAIMove(board, xMoves, oMoves, depth = 5) {
     if (board[4] === null) return 4; // center
     const corners = [0, 2, 6, 8].filter(i => board[i] === null);
     if (corners.length) return corners[Math.floor(Math.random() * corners.length)];
+  }
+
+  // Easy mode: 40% chance to play a random legal move
+  if (difficulty === 'easy' && Math.random() < 0.4) {
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  // Medium mode: 15% chance to play a random legal move
+  if (difficulty === 'medium' && Math.random() < 0.15) {
+    return available[Math.floor(Math.random() * available.length)];
   }
 
   let bestScore = -Infinity;

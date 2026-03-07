@@ -112,7 +112,7 @@ function StepRule2() {
   );
 }
 
-function StepReady({ mode, onModeChange }) {
+function StepReady({ mode, onModeChange, difficulty, onDifficultyChange }) {
   return (
     <div key="ready" style={{ animation: 'step-enter 0.4s ease-out' }} className="flex flex-col items-center gap-6 text-center">
       <div className="flex flex-col gap-1 items-center">
@@ -152,6 +152,46 @@ function StepReady({ mode, onModeChange }) {
           </button>
         ))}
       </div>
+
+      {/* Difficulty selector — only shown when vs AI */}
+      {mode === 'ai' && (
+        <div
+          className="flex flex-col items-center gap-3"
+          style={{ animation: 'step-enter 0.3s ease-out' }}
+        >
+          <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
+            Difficulty
+          </p>
+          <div
+            className="flex rounded-lg border overflow-hidden"
+            style={{ borderColor: 'var(--color-border)' }}
+          >
+            {[
+              { value: 'easy',   label: 'Easy',   sub: 'Forgiving' },
+              { value: 'medium', label: 'Medium', sub: 'Balanced' },
+              { value: 'hard',   label: 'Hard',   sub: 'Ruthless' },
+            ].map((opt, i, arr) => (
+              <button
+                key={opt.value}
+                onClick={() => onDifficultyChange(opt.value)}
+                className="flex flex-col items-center px-5 py-2.5 text-sm font-medium transition-colors duration-100"
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  backgroundColor: difficulty === opt.value ? 'var(--color-text)' : 'var(--color-surface)',
+                  color: difficulty === opt.value ? 'var(--color-bg)' : 'var(--color-muted)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  borderRight: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
+                  minWidth: 90,
+                }}
+              >
+                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{opt.label}</span>
+                <span style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: 2 }}>{opt.sub}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -205,6 +245,7 @@ function StepIntro() {
 export default function IntroScreen({ onDone }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [mode, setMode] = useState('ai');
+  const [difficulty, setDifficulty] = useState('medium');
   const step = STEPS[stepIndex];
   const isLast = stepIndex === STEPS.length - 1;
 
@@ -218,10 +259,14 @@ export default function IntroScreen({ onDone }) {
 
   function handleNext() {
     if (isLast) {
-      onDone(mode);
+      onDone(mode, difficulty);
     } else {
       setStepIndex(i => i + 1);
     }
+  }
+
+  function handlePrev() {
+    setStepIndex(i => Math.max(1, i - 1));
   }
 
   // Progress dots (skip intro step from count)
@@ -242,7 +287,7 @@ export default function IntroScreen({ onDone }) {
         {step === 'hook'   && <StepHook />}
         {step === 'rule-1' && <StepRule1 />}
         {step === 'rule-2' && <StepRule2 />}
-        {step === 'ready'  && <StepReady mode={mode} onModeChange={setMode} />}
+        {step === 'ready'  && <StepReady mode={mode} onModeChange={setMode} difficulty={difficulty} onDifficultyChange={setDifficulty} />}
       </div>
 
       {/* Navigation — hidden on intro (auto-advances) */}
@@ -268,32 +313,55 @@ export default function IntroScreen({ onDone }) {
             ))}
           </div>
 
-          {/* CTA button */}
-          <button
-            onClick={handleNext}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-lg border font-medium text-sm transition-colors duration-150"
-            style={{
-              fontFamily: 'var(--font-sans)',
-              backgroundColor: isLast ? 'var(--color-text)' : 'var(--color-surface)',
-              color: isLast ? 'var(--color-bg)' : 'var(--color-text)',
-              borderColor: isLast ? 'var(--color-text)' : 'var(--color-border)',
-              cursor: 'pointer',
-            }}
-            onMouseEnter={e => {
-              if (!isLast) e.currentTarget.style.borderColor = 'var(--color-border-strong)';
-            }}
-            onMouseLeave={e => {
-              if (!isLast) e.currentTarget.style.borderColor = 'var(--color-border)';
-            }}
-          >
-            {isLast ? 'Start playing' : 'Next'}
-            <span style={{ fontSize: 14 }}>{isLast ? '→' : '›'}</span>
-          </button>
+          {/* Navigation buttons */}
+          <div className="flex items-center gap-3">
+            {/* Prev button — hidden on first content step */}
+            {currentContentIdx > 0 && (
+              <button
+                onClick={handlePrev}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-lg border font-medium text-sm transition-colors duration-150"
+                style={{
+                  fontFamily: 'var(--font-sans)',
+                  backgroundColor: 'var(--color-surface)',
+                  color: 'var(--color-muted)',
+                  borderColor: 'var(--color-border)',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-border-strong)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
+              >
+                <span style={{ fontSize: 14 }}>‹</span>
+                Prev
+              </button>
+            )}
+
+            {/* Next / Start button */}
+            <button
+              onClick={handleNext}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg border font-medium text-sm transition-colors duration-150"
+              style={{
+                fontFamily: 'var(--font-sans)',
+                backgroundColor: isLast ? 'var(--color-text)' : 'var(--color-surface)',
+                color: isLast ? 'var(--color-bg)' : 'var(--color-text)',
+                borderColor: isLast ? 'var(--color-text)' : 'var(--color-border)',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={e => {
+                if (!isLast) e.currentTarget.style.borderColor = 'var(--color-border-strong)';
+              }}
+              onMouseLeave={e => {
+                if (!isLast) e.currentTarget.style.borderColor = 'var(--color-border)';
+              }}
+            >
+              {isLast ? 'Start playing' : 'Next'}
+              <span style={{ fontSize: 14 }}>{isLast ? '→' : '›'}</span>
+            </button>
+          </div>
 
           {/* Skip link — only on non-last content steps */}
           {!isLast && (
             <button
-              onClick={() => onDone(mode)}
+              onClick={() => onDone(mode, difficulty)}
               className="text-xs transition-colors duration-100"
               style={{
                 color: 'var(--color-subtle)',
