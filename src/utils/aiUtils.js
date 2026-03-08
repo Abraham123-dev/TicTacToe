@@ -1,4 +1,5 @@
 import { checkWinner, placeMarkWithVanish, WIN_LINES } from './gameUtils';
+import { placeMarkFireWater, checkEliminationWin } from './fireWaterUtils';
 
 /**
  * Heuristic: score the board from O's perspective.
