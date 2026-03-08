@@ -64,7 +64,7 @@ export default function HintAssistant({ hint, onRequestHint, onDismiss, disabled
                 />
               ))}
             </span>
-            Analyzing…
+            Deep analysis…
           </>
         ) : hint && expanded ? (
           <>
@@ -73,8 +73,8 @@ export default function HintAssistant({ hint, onRequestHint, onDismiss, disabled
           </>
         ) : (
           <>
-            <span style={{ fontSize: 13 }}>🤖</span>
-            Ask Coach
+            <span style={{ fontSize: 13 }}>🧠</span>
+            Ask Coach (beats Hard AI)
           </>
         )}
       </button>

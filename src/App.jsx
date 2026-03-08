@@ -147,12 +147,12 @@ export default function App() {
     if (game.winner || game.isDraw) return;
     if (game.currentPlayer !== 'X') return;
     setIsHintThinking(true);
-    // Small delay so the "Analyzing" state is visible
+    // Delay so the "Deep analysis" state is visible (depth 9 takes a moment)
     setTimeout(() => {
       const result = getHintForPlayer(game.board, game.xMoves, game.oMoves);
       setHint(result);
       setIsHintThinking(false);
-    }, 400);
+    }, 600);
   }, [game]);
 
   const handleDismissHint = useCallback(() => {
