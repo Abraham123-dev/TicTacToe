@@ -1,0 +1,43 @@
+import http from 'http';
+import { Server } from 'socket.io';
+import app from './src/app.js';
+import { ENV } from './src/config/env.js';
+import connectDB from './src/config/db.js';
+
+/**
+ * Initialize Database Connection
+ */
+connectDB();
+
+/**
+ * Create HTTP server and attach Express app
+ */
+const server = http.createServer(app);
+
+/**
+ * Initialize Socket.io and attach to HTTP server
+ * No business logic implemented yet as per requirements.
+ */
+const io = new Server(server, {
+  cors: {
+    origin: '*', // Allow all origins for development
+    methods: ['GET', 'POST'],
+  },
+});
+
+io.on('connection', (socket) => {
+  // Socket connection established
+  // console.log(`User connected: ${socket.id}`);
+  
+  socket.on('disconnect', () => {
+    // console.log(`User disconnected: ${socket.id}`);
+  });
+});
+
+/**
+ * Start the server
+ */
+const PORT = ENV.PORT;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
