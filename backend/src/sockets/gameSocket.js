@@ -1,79 +1,91 @@
 import Session from '../models/Session.js';
+import User from '../models/User.js';
+import { verifyGoogleIdToken } from '../services/googleAuthService.js';
 import { checkWinner } from '../utils/gameLogic.js';
 
 /**
- * Game Socket Handler
+ * Game Socket Handler with Production Hardening
  */
 export const initGameSocket = (io) => {
+  // 1. Socket Authentication Middleware
+  io.use(async (socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Authentication error: Token missing'));
+
+    try {
+      const googleUser = await verifyGoogleIdToken(token);
+      let user = await User.findOne({ google_id: googleUser.google_id });
+      
+      if (!user) {
+        user = await User.create(googleUser);
+      }
+      
+      socket.user = user; // Attach user to socket
+      next();
+    } catch (error) {
+      console.error('Socket Auth Error:', error.message);
+      next(new Error('Authentication error: Invalid token'));
+    }
+  });
+
   io.on('connection', (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+    const userId = socket.user._id.toString();
+    console.log(`User connected: ${socket.user.name} (${socket.id})`);
 
     /**
-     * Join Room
+     * Join Room / Reconnection Logic
      */
     socket.on('join_room', async ({ sessionId }) => {
       if (!sessionId) return;
       const roomName = `session_${sessionId}`;
+      
       socket.join(roomName);
+      console.log(`User ${socket.user.name} joined room: ${roomName}`);
 
-      console.log(`Socket ${socket.id} joined room: ${roomName}`);
-
-      // Fetch and emit current state to the joining player
       try {
         const session = await Session.findById(sessionId);
         if (session) {
+          // Send latest state immediately to sync client
           socket.emit('game_update', {
             board: session.board,
             current_turn: session.current_turn,
             status: session.status,
+            winner: session.winner,
           });
         }
       } catch (error) {
-        console.error('Error fetching session on join_room:', error);
+        console.error('Error in join_room:', error);
       }
-
-      socket.to(roomName).emit('player_joined', { socketId: socket.id });
     });
 
     /**
-     * Handle Player Move
+     * Authoritative Player Move
      */
-    socket.on('player_move', async ({ sessionId, cellIndex, playerId }) => {
+    socket.on('player_move', async ({ sessionId, cellIndex }) => {
+      const roomName = `session_${sessionId}`;
+
       try {
+        // Fetch latest session from DB to prevent race conditions
         const session = await Session.findById(sessionId);
 
-        // 1. Validation
-        if (!session) {
-          return socket.emit('invalid_move', { reason: 'Session not found' });
-        }
-        if (session.status !== 'active') {
-          return socket.emit('invalid_move', { reason: 'Game is not active' });
-        }
-        if (session.board[cellIndex] !== '') {
-          return socket.emit('invalid_move', { reason: 'Cell already occupied' });
-        }
+        // Validation
+        if (!session) return socket.emit('invalid_move', { reason: 'Session not found' });
+        if (session.status !== 'active') return socket.emit('invalid_move', { reason: 'Game is not active' });
+        if (session.board[cellIndex] !== '') return socket.emit('invalid_move', { reason: 'Cell occupied' });
 
-        // 2. Identify Player Symbol
-        const isHost = session.host_id.toString() === playerId;
-        const isGuest = session.guest_id?.toString() === playerId;
-        
-        if (!isHost && !isGuest) {
-          return socket.emit('invalid_move', { reason: 'Player not in session' });
-        }
+        const isHost = session.host_id.toString() === userId;
+        const isGuest = session.guest_id?.toString() === userId;
+        if (!isHost && !isGuest) return socket.emit('invalid_move', { reason: 'Not a participant' });
 
         const playerSymbol = isHost ? 'X' : 'O';
-
-        // 3. Turn Validation
         if (session.current_turn !== playerSymbol) {
           return socket.emit('invalid_move', { reason: 'Not your turn' });
         }
 
-        // 4. Apply Move
+        // Apply atomic-like update
         session.board[cellIndex] = playerSymbol;
         
-        // 5. Check for Win/Draw
         const result = checkWinner(session.board);
-        
         if (result) {
           session.status = 'finished';
           session.winner = result;
@@ -81,11 +93,12 @@ export const initGameSocket = (io) => {
           session.current_turn = playerSymbol === 'X' ? 'O' : 'X';
         }
 
-        // 6. Persist to Database
         await session.save();
 
-        // 7. Broadcast Updates
-        const roomName = `session_${sessionId}`;
+        // Log the move
+        console.log(`[MOVE] Session: ${sessionId}, User: ${userId}, Cell: ${cellIndex}, Result: ${result || 'continue'}`);
+
+        // Broadcast updates
         if (session.status === 'finished') {
           io.to(roomName).emit('game_over', {
             winner: session.winner,
@@ -95,20 +108,17 @@ export const initGameSocket = (io) => {
           io.to(roomName).emit('game_update', {
             board: session.board,
             current_turn: session.current_turn,
+            status: session.status,
           });
         }
-
       } catch (error) {
-        console.error('Move Error:', error);
-        socket.emit('invalid_move', { reason: 'Server error processing move' });
+        console.error('Error in player_move:', error);
+        socket.emit('invalid_move', { reason: 'Server error' });
       }
     });
 
-    /**
-     * Disconnect
-     */
     socket.on('disconnect', () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+      console.log(`User disconnected: ${socket.user.name} (${socket.id})`);
     });
   });
 };

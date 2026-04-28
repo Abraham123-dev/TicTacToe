@@ -4,11 +4,7 @@ import * as sessionService from '../services/sessionService.js';
  * Controller to create a new session.
  */
 export const createSession = async (req, res) => {
-  const { userId } = req.body || {};
-
-  if (!userId) {
-    return res.status(400).json({ error: 'userId is required' });
-  }
+  const userId = req.user._id;
 
   try {
     const session = await sessionService.createSession(userId);
@@ -22,10 +18,11 @@ export const createSession = async (req, res) => {
  * Controller to join an existing session.
  */
 export const joinSession = async (req, res) => {
-  const { sessionId, userId } = req.body || {};
+  const { sessionId } = req.body || {};
+  const userId = req.user._id;
 
-  if (!sessionId || !userId) {
-    return res.status(400).json({ error: 'sessionId and userId are required' });
+  if (!sessionId) {
+    return res.status(400).json({ error: 'sessionId is required' });
   }
 
   try {
