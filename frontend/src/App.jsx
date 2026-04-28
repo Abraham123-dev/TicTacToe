@@ -379,7 +379,7 @@ export default function App() {
             <div className="flex items-center gap-3">
               <span 
                 className="font-mono font-bold" 
-                style={{ fontSize: '1.2rem', color: 'var(--color-text)', letterSpacing: '0.1em' }}
+                style={{ fontSize: '1.4rem', color: 'var(--color-text)', letterSpacing: '0.05em' }}
               >
                 {sessionId}
               </span>

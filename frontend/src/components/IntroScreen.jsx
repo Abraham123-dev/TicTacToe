@@ -331,7 +331,7 @@ function StepReady({ mode, onModeChange, difficulty, onDifficultyChange, onJoinS
                   type="text" 
                   placeholder="Enter Room ID"
                   value={joinId}
-                  onChange={(e) => setJoinId(e.target.value.toLowerCase())}
+                  onChange={(e) => setJoinId(e.target.value.toUpperCase())}
                   className="flex-1 px-4 py-3 rounded-lg border bg-transparent"
                   style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}
                 />

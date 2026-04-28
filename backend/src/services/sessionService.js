@@ -28,7 +28,7 @@ export const createSession = async (userId) => {
  * @returns {Promise<Object>} The updated session.
  */
 export const joinSession = async (sessionId, userId) => {
-  const session = await Session.findById(sessionId);
+  const session = await Session.findById(sessionId.toUpperCase());
 
   if (!session) {
     throw { status: 404, message: 'Session not found' };
@@ -55,7 +55,7 @@ export const joinSession = async (sessionId, userId) => {
  * @returns {Promise<Object>} The populated session.
  */
 export const getSession = async (sessionId) => {
-  const session = await Session.findById(sessionId)
+  const session = await Session.findById(sessionId.toUpperCase())
     .populate('host_id', 'name email avatar_url')
     .populate('guest_id', 'name email avatar_url');
 
