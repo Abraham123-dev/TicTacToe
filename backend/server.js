@@ -3,6 +3,7 @@ import { Server } from 'socket.io';
 import app from './src/app.js';
 import { ENV } from './src/config/env.js';
 import connectDB from './src/config/db.js';
+import { initGameSocket } from './src/sockets/gameSocket.js';
 
 /**
  * Initialize Database Connection
@@ -16,7 +17,6 @@ const server = http.createServer(app);
 
 /**
  * Initialize Socket.io and attach to HTTP server
- * No business logic implemented yet as per requirements.
  */
 const io = new Server(server, {
   cors: {
@@ -25,14 +25,10 @@ const io = new Server(server, {
   },
 });
 
-io.on('connection', (socket) => {
-  // Socket connection established
-  // console.log(`User connected: ${socket.id}`);
-  
-  socket.on('disconnect', () => {
-    // console.log(`User disconnected: ${socket.id}`);
-  });
-});
+/**
+ * Initialize Game Sockets
+ */
+initGameSocket(io);
 
 /**
  * Start the server
