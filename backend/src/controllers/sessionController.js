@@ -30,6 +30,23 @@ export const joinSession = async (req, res) => {
 
   try {
     const session = await sessionService.joinSession(sessionId, userId);
+
+    // Emit Socket Events
+    const io = req.app.get('io');
+    const roomName = `session_${sessionId}`;
+    
+    io.to(roomName).emit('player_joined', {
+      message: 'Guest joined',
+      sessionId,
+      guestId: userId,
+    });
+
+    io.to(roomName).emit('game_update', {
+      board: session.board,
+      current_turn: session.current_turn,
+      status: session.status,
+    });
+
     res.status(200).json(session);
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message || 'Internal server error' });

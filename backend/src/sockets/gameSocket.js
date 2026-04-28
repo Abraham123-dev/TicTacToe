@@ -11,10 +11,27 @@ export const initGameSocket = (io) => {
     /**
      * Join Room
      */
-    socket.on('join_room', ({ sessionId }) => {
+    socket.on('join_room', async ({ sessionId }) => {
       if (!sessionId) return;
       const roomName = `session_${sessionId}`;
       socket.join(roomName);
+
+      console.log(`Socket ${socket.id} joined room: ${roomName}`);
+
+      // Fetch and emit current state to the joining player
+      try {
+        const session = await Session.findById(sessionId);
+        if (session) {
+          socket.emit('game_update', {
+            board: session.board,
+            current_turn: session.current_turn,
+            status: session.status,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching session on join_room:', error);
+      }
+
       socket.to(roomName).emit('player_joined', { socketId: socket.id });
     });
 
