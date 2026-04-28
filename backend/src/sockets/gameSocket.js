@@ -43,7 +43,10 @@ export const initGameSocket = (io) => {
       console.log(`User ${socket.user.name} joined room: ${roomName}`);
 
       try {
-        const session = await Session.findById(sessionId);
+        const session = await Session.findById(sessionId)
+          .populate('host_id', 'name email avatar_url')
+          .populate('guest_id', 'name email avatar_url');
+
         if (session) {
           // Send latest state immediately to sync client
           socket.emit('game_update', {
@@ -51,6 +54,10 @@ export const initGameSocket = (io) => {
             current_turn: session.current_turn,
             status: session.status,
             winner: session.winner,
+            host: session.host_id,
+            guest: session.guest_id,
+            x_moves: session.x_moves,
+            o_moves: session.o_moves,
           });
         }
       } catch (error) {
@@ -111,20 +118,29 @@ export const initGameSocket = (io) => {
         await session.save();
 
         // Broadcast updates
+        // Re-fetch populated session for broadcast
+        const updatedSession = await Session.findById(sessionId)
+          .populate('host_id', 'name email avatar_url')
+          .populate('guest_id', 'name email avatar_url');
+
         if (session.status === 'finished') {
           io.to(roomName).emit('game_over', {
-            winner: session.winner,
-            board: session.board,
-            x_moves: session.x_moves,
-            o_moves: session.o_moves,
+            winner: updatedSession.winner,
+            board: updatedSession.board,
+            x_moves: updatedSession.x_moves,
+            o_moves: updatedSession.o_moves,
+            host: updatedSession.host_id,
+            guest: updatedSession.guest_id,
           });
         } else {
           io.to(roomName).emit('game_update', {
-            board: session.board,
-            current_turn: session.current_turn,
-            status: session.status,
-            x_moves: session.x_moves,
-            o_moves: session.o_moves,
+            board: updatedSession.board,
+            current_turn: updatedSession.current_turn,
+            status: updatedSession.status,
+            x_moves: updatedSession.x_moves,
+            o_moves: updatedSession.o_moves,
+            host: updatedSession.host_id,
+            guest: updatedSession.guest_id,
           });
         }
       } catch (error) {

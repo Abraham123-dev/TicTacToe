@@ -20,6 +20,8 @@ const INITIAL_STATE = {
   winner: null,
   winningLine: null,
   isDraw: false,
+  host: null,
+  guest: null,
 };
 
 export default function App() {
@@ -49,25 +51,26 @@ export default function App() {
     });
 
     socket.on('game_update', (data) => {
-      setGame(prev => ({
+      setGame((prev) => ({
         ...prev,
-        board: data.board.map(c => c === '' ? null : c),
+        board: data.board,
         currentPlayer: data.current_turn,
+        status: data.status,
         xMoves: data.x_moves || [],
         oMoves: data.o_moves || [],
-        winner: null,
-        isDraw: false,
+        host: data.host,
+        guest: data.guest,
       }));
     });
 
     socket.on('game_over', (data) => {
-      setGame(prev => ({
+      setGame((prev) => ({
         ...prev,
-        board: data.board.map(c => c === '' ? null : c),
-        winner: data.winner === 'draw' ? null : data.winner,
+        winner: data.winner,
+        board: data.board,
         isDraw: data.winner === 'draw',
-        xMoves: data.x_moves || [],
-        oMoves: data.o_moves || [],
+        host: data.host,
+        guest: data.guest,
       }));
       if (data.winner && data.winner !== 'draw') {
         setScores(s => ({ ...s, [data.winner]: s[data.winner] + 1 }));
@@ -333,6 +336,40 @@ export default function App() {
           onBackToIntro={handleBackToIntro}
         />
 
+        {gameMode === 'multiplayer' && (
+          <div className="flex justify-between w-full max-w-sm mb-2 px-2 animate-in fade-in zoom-in-95 duration-500">
+            {/* Host (X) */}
+            <div className={`flex items-center gap-2 p-2 rounded-lg border transition-all ${game.currentPlayer === 'X' ? 'scale-105 shadow-sm ring-1 ring-white/10' : 'opacity-40 grayscale-[0.5]'}`}
+                 style={{ backgroundColor: 'var(--color-surface)', borderColor: game.currentPlayer === 'X' ? 'var(--color-x)' : 'var(--color-border)' }}>
+              <img 
+                src={game.host?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${game.host?._id || 'host'}`} 
+                className="w-8 h-8 rounded-full border border-white/10" 
+                alt="X" 
+              />
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[10px] font-bold uppercase opacity-50">Player X</span>
+                <span className="text-xs font-bold truncate max-w-[80px]">{game.host?.name || 'Waiting...'}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center text-xl font-black opacity-10 italic">VS</div>
+
+            {/* Guest (O) */}
+            <div className={`flex flex-row-reverse items-center gap-2 p-2 rounded-lg border transition-all ${game.currentPlayer === 'O' ? 'scale-105 shadow-sm ring-1 ring-white/10' : 'opacity-40 grayscale-[0.5]'}`}
+                 style={{ backgroundColor: 'var(--color-surface)', borderColor: game.currentPlayer === 'O' ? 'var(--color-o)' : 'var(--color-border)' }}>
+              <img 
+                src={game.guest?.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${game.guest?._id || 'guest'}`} 
+                className="w-8 h-8 rounded-full border border-white/10" 
+                alt="O" 
+              />
+              <div className="flex flex-col items-end leading-tight">
+                <span className="text-[10px] font-bold uppercase opacity-50">Player O</span>
+                <span className="text-xs font-bold truncate max-w-[80px]">{game.guest?.name || 'Waiting...'}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <TurnIndicator
           currentPlayer={game.currentPlayer}
           xMoves={game.xMoves}
@@ -376,41 +413,57 @@ export default function App() {
         <ScoreBoard scores={scores} onReset={handleResetScores} gameMode={gameMode} />
         
         {sessionId && gameMode === 'multiplayer' && (
-          <div 
-            className="flex flex-col items-center gap-2 mt-6 px-4 py-3 rounded-xl border animate-in fade-in slide-in-from-bottom-4 duration-500"
-            style={{ 
-              backgroundColor: 'var(--color-surface)', 
-              borderColor: 'var(--color-border)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-            }}
-          >
-            <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Room ID
-            </span>
-            <div className="flex items-center gap-3">
-              <span 
-                className="font-mono font-bold" 
-                style={{ fontSize: '1.4rem', color: 'var(--color-text)', letterSpacing: '0.05em' }}
-              >
-                {sessionId}
-              </span>
+          <div className="flex flex-col w-full max-w-sm mt-6 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            {/* Room Code Badge */}
+            <div 
+              className="flex items-center justify-between px-4 py-3 rounded-xl border"
+              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold uppercase opacity-50 tracking-wider">Room Code</span>
+                <span className="font-mono font-bold text-lg" style={{ color: 'var(--color-text)' }}>{sessionId}</span>
+              </div>
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(sessionId);
-                  showToast('Room ID copied!', 'success');
+                  showToast('Code copied!', 'success');
                 }}
-                className="p-2 rounded-md transition-colors"
-                style={{ 
-                  backgroundColor: 'var(--color-bg)', 
-                  border: '1px solid var(--color-border-strong)',
-                  cursor: 'pointer'
-                }}
-                title="Copy Room ID"
+                className="p-2 rounded-lg transition-all hover:scale-105 active:scale-95"
+                style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border-strong)', cursor: 'pointer' }}
               >
-                <span style={{ fontSize: 14 }}>📋</span>
+                <span style={{ fontSize: 16 }}>📋</span>
               </button>
             </div>
-            <p className="text-[10px] opacity-40 italic">Share this code with your friend to play together</p>
+
+            {/* Live Activity Log */}
+            <div 
+              className="flex flex-col p-4 rounded-xl border"
+              style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+            >
+              <span className="text-[10px] font-bold uppercase opacity-50 mb-3 tracking-widest">Live Activity</span>
+              <div className="flex flex-col gap-2 max-h-24 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex items-center gap-2 text-xs">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="opacity-70"><b>{game.host?.name || 'Host'}</b> is online</span>
+                </div>
+                {game.guest ? (
+                  <div className="flex items-center gap-2 text-xs animate-in slide-in-from-left duration-300">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                    <span className="opacity-70"><b>{game.guest?.name}</b> joined the match</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-xs opacity-40 italic">
+                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+                    <span>Waiting for guest...</span>
+                  </div>
+                )}
+                {game.winner && (
+                  <div className="flex items-center gap-2 text-xs font-bold text-yellow-500 mt-1 animate-bounce">
+                    <span>🏆 Game Over: {game.winner === 'draw' ? 'It is a draw!' : `${game.winner === 'X' ? game.host?.name : game.guest?.name} won!`}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </main>
