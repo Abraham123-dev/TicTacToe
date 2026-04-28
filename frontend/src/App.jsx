@@ -37,6 +37,70 @@ export default function App() {
   const [sessionId, setSessionId] = useState(null);
 
   const AI_DEPTH = { easy: 1, medium: 3, hard: 5 };
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  const handleCreateSession = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('google_id_token');
+      const res = await fetch(`${API_URL}/api/session/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSessionId(data._id);
+        setGameMode('multiplayer');
+        setShowIntro(false);
+        showToast('Room created!', 'success');
+        window.history.replaceState(null, '', `?room=${data._id}`);
+      } else {
+        showToast(data.error || 'Failed to create room', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error', 'error');
+    }
+  }, [API_URL]);
+
+  const handleJoinSession = useCallback(async (id) => {
+    if (!id) return showToast('Please enter a room ID', 'warn');
+    try {
+      const res = await fetch(`${API_URL}/api/session/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('google_id_token')}`,
+        },
+        body: JSON.stringify({ sessionId: id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSessionId(data._id);
+        setGameMode('multiplayer');
+        setShowIntro(false);
+        showToast('Joined room!', 'success');
+        window.history.replaceState(null, '', `?room=${data._id}`);
+      } else {
+        showToast(data.error || 'Failed to join room', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error', 'error');
+    }
+  }, [API_URL]);
+
+  // Handle Auto-Join from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const roomFromUrl = params.get('room');
+    const token = localStorage.getItem('google_id_token');
+
+    if (roomFromUrl && !sessionId && token) {
+      console.log('Auto-joining room from URL:', roomFromUrl);
+      handleJoinSession(roomFromUrl);
+    }
+  }, [sessionId, handleJoinSession]);
 
   // Socket synchronization
   useEffect(() => {
@@ -140,6 +204,7 @@ export default function App() {
     });
   }, [gameMode, sessionId]);
 
+
   // AI move trigger
   useEffect(() => {
     if (gameMode !== 'ai') return;
@@ -203,58 +268,6 @@ export default function App() {
     showToast(`Difficulty → ${labels[newDiff]}`, 'info');
   }, [difficulty]);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-  const handleCreateSession = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('google_id_token');
-      console.log('Creating session with token:', token?.substring(0, 10) + '...');
-      const res = await fetch(`${API_URL}/api/session/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
-      console.log('Create session response:', data);
-      if (res.ok) {
-        setSessionId(data._id);
-        setGameMode('multiplayer');
-        setShowIntro(false);
-        showToast('Room created!', 'success');
-      } else {
-        showToast(data.error || 'Failed to create room', 'error');
-      }
-    } catch (err) {
-      showToast('Connection error', 'error');
-    }
-  }, [API_URL]);
-
-  const handleJoinSession = useCallback(async (id) => {
-    if (!id) return showToast('Please enter a room ID', 'warn');
-    try {
-      const res = await fetch(`${API_URL}/api/session/join`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('google_id_token')}`,
-        },
-        body: JSON.stringify({ sessionId: id }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSessionId(data._id);
-        setGameMode('multiplayer');
-        setShowIntro(false);
-        showToast('Joined room!', 'success');
-      } else {
-        showToast(data.error || 'Failed to join room', 'error');
-      }
-    } catch (err) {
-      showToast('Connection error', 'error');
-    }
-  }, [API_URL]);
 
   const handleShowFullIntro = useCallback(() => {
     localStorage.removeItem('hasSeenIntro');
@@ -275,6 +288,8 @@ export default function App() {
     setIsAIThinking(false);
     setHint(null);
     setSessionId(null);
+    // Clear URL
+    window.history.replaceState(null, '', window.location.pathname);
   }, []);
 
   const handleResetScores = useCallback(() => {
