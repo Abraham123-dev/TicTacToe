@@ -438,7 +438,9 @@ function StepIntro() {
 }
 
 export default function IntroScreen({ onDone, onCreateSession, onJoinSession }) {
-  const [stepIndex, setStepIndex] = useState(0);
+  const [stepIndex, setStepIndex] = useState(() => {
+    return localStorage.getItem('hasSeenIntro') === 'true' ? STEPS.indexOf('ready') : 0;
+  });
   const [mode, setMode] = useState('ai');
   const [difficulty, setDifficulty] = useState('medium');
   const step = STEPS[stepIndex];
@@ -454,6 +456,7 @@ export default function IntroScreen({ onDone, onCreateSession, onJoinSession }) 
 
   function handleNext() {
     if (isLast) {
+      localStorage.setItem('hasSeenIntro', 'true');
       onDone(mode, difficulty);
     } else {
       setStepIndex(i => i + 1);

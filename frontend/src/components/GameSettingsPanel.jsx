@@ -9,6 +9,7 @@ export default function GameSettingsPanel({
   onDifficultyChange,
   onNewGame,
   onBackToIntro,
+  onShowFullIntro,
 }) {
   const panelRef = useRef(null);
 
@@ -186,8 +187,25 @@ export default function GameSettingsPanel({
         </button>
 
         <button
-          onClick={() => { onBackToIntro(); onClose(); }}
+          onClick={() => { onShowFullIntro(); onClose(); }}
           className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-medium transition-colors duration-100"
+          style={{
+            fontFamily: 'var(--font-sans)',
+            background: 'none',
+            color: 'var(--color-subtle)',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--color-muted)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--color-subtle)'}
+        >
+          <span style={{ fontSize: 12 }}>❓</span>
+          How to Play
+        </button>
+
+        <button
+          onClick={() => { onBackToIntro(); onClose(); }}
+          className="flex items-center justify-center gap-2 w-full px-4 py-2 rounded-lg text-xs font-medium transition-colors duration-100 opacity-60"
           style={{
             fontFamily: 'var(--font-sans)',
             background: 'none',

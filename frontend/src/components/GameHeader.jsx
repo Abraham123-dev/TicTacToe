@@ -8,6 +8,7 @@ export default function GameHeader({
   onDifficultyChange,
   onNewGame,
   onBackToIntro,
+  onShowFullIntro,
 }) {
   const [showRule, setShowRule] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -100,6 +101,7 @@ export default function GameHeader({
             onDifficultyChange={onDifficultyChange}
             onNewGame={onNewGame}
             onBackToIntro={onBackToIntro}
+            onShowFullIntro={onShowFullIntro}
           />
         </div>
       </div>

@@ -253,6 +253,17 @@ export default function App() {
     }
   }, [API_URL]);
 
+  const handleShowFullIntro = useCallback(() => {
+    localStorage.removeItem('hasSeenIntro');
+    setShowIntro(true);
+    setGame({ ...INITIAL_STATE });
+    setScores({ X: 0, O: 0 });
+    setStartPlayer('X');
+    setIsAIThinking(false);
+    setHint(null);
+    setSessionId(null);
+  }, []);
+
   const handleBackToIntro = useCallback(() => {
     setShowIntro(true);
     setGame({ ...INITIAL_STATE });
