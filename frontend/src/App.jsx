@@ -200,6 +200,56 @@ export default function App() {
     showToast(`Difficulty → ${labels[newDiff]}`, 'info');
   }, [difficulty]);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  const handleCreateSession = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/session/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('google_id_token')}`,
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSessionId(data._id);
+        setGameMode('multiplayer');
+        setShowIntro(false);
+        showToast('Room created!', 'success');
+      } else {
+        showToast(data.error || 'Failed to create room', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error', 'error');
+    }
+  }, [API_URL]);
+
+  const handleJoinSession = useCallback(async (id) => {
+    if (!id) return showToast('Please enter a room ID', 'warn');
+    try {
+      const res = await fetch(`${API_URL}/api/session/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('google_id_token')}`,
+        },
+        body: JSON.stringify({ sessionId: id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSessionId(data._id);
+        setGameMode('multiplayer');
+        setShowIntro(false);
+        showToast('Joined room!', 'success');
+      } else {
+        showToast(data.error || 'Failed to join room', 'error');
+      }
+    } catch (err) {
+      showToast('Connection error', 'error');
+    }
+  }, [API_URL]);
+
   const handleBackToIntro = useCallback(() => {
     setShowIntro(true);
     setGame({ ...INITIAL_STATE });
@@ -207,6 +257,7 @@ export default function App() {
     setStartPlayer('X');
     setIsAIThinking(false);
     setHint(null);
+    setSessionId(null);
   }, []);
 
   const handleResetScores = useCallback(() => {
@@ -237,12 +288,16 @@ export default function App() {
       <>
         <ThemeToggle />
         <ToastContainer />
-        <IntroScreen onDone={(mode, diff, sid) => { 
-          setGameMode(mode); 
-          setDifficulty(diff || 'medium'); 
-          if (sid) setSessionId(sid);
-          setShowIntro(false); 
-        }} />
+        <IntroScreen 
+          onDone={(mode, diff, sid) => { 
+            setGameMode(mode); 
+            setDifficulty(diff || 'medium'); 
+            if (sid) setSessionId(sid);
+            setShowIntro(false); 
+          }} 
+          onCreateSession={handleCreateSession}
+          onJoinSession={handleJoinSession}
+        />
       </>
     );
   }
