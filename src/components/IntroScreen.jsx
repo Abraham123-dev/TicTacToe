@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Trophy, ArrowRight, Settings, ArrowUp, RotateCcw, BarChart3, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const TITLE_LETTERS = 'TIC-TAC-TOE'.split('');
 
@@ -57,7 +58,7 @@ function MiniBoard({ highlight = [], faded = [], labels = {} }) {
 function StepHook() {
   return (
     <div key="hook" style={{ animation: 'step-enter 0.4s ease-out' }} className="flex flex-col items-center gap-5 text-center">
-      <div style={{ fontSize: 36 }}>♟</div>
+      <Trophy size={36} strokeWidth={1.5} style={{ color: 'var(--color-text)' }} />
       <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)', lineHeight: 1.2 }}>
         You know Tic-Tac-Toe.
       </h2>
@@ -95,7 +96,9 @@ function StepRule2() {
           labels={{ 0: 'X', 2: 'X', 4: 'X', 1: 'O', 3: 'O' }}
           faded={[0]}
         />
-        <div style={{ color: 'var(--color-muted)', fontSize: 18, marginBottom: 48 }}>→</div>
+        <div style={{ color: 'var(--color-muted)', marginBottom: 48 }}>
+          <ArrowRight size={18} strokeWidth={2} />
+        </div>
         <MiniBoard
           labels={{ 2: 'X', 4: 'X', 6: 'X', 1: 'O', 3: 'O' }}
           highlight={[6]}
@@ -162,12 +165,11 @@ function StepTip() {
               borderColor: 'var(--color-text)',
               color: 'var(--color-text)',
               backgroundColor: 'var(--color-surface)',
-              fontSize: 12,
               lineHeight: 1,
               animation: 'pulse-gear 2s ease-in-out infinite',
             }}
           >
-            ⚙
+            <Settings size={12} strokeWidth={2.5} />
           </span>
 
           {/* Animated bouncing arrow */}
@@ -179,12 +181,10 @@ function StepTip() {
               transform: 'translateX(-50%)',
               animation: 'bounce-arrow 1s ease-in-out infinite',
               color: 'var(--color-text)',
-              fontSize: 18,
-              fontWeight: 700,
               lineHeight: 1,
             }}
           >
-            ↑
+            <ArrowUp size={18} strokeWidth={2.5} />
           </div>
         </div>
       </div>
@@ -195,7 +195,7 @@ function StepTip() {
           Change settings anytime
         </h2>
         <p style={{ fontSize: '0.9rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)', maxWidth: 280, lineHeight: 1.6 }}>
-          Tap the <strong style={{ color: 'var(--color-text)' }}>⚙ gear icon</strong> during a game to switch difficulty, change opponent, or start fresh.
+          Tap the <strong style={{ color: 'var(--color-text)' }}>gear icon</strong> during a game to switch difficulty, change opponent, or start fresh.
         </p>
       </div>
 
@@ -205,10 +205,12 @@ function StepTip() {
         style={{ maxWidth: 240 }}
       >
         {[
-          { icon: '↻', text: 'Start a new game' },
-          { icon: '📊', text: 'Switch difficulty level' },
-          { icon: '👥', text: 'Change opponent (AI or friend)' },
-        ].map((item, i) => (
+          { icon: RotateCcw, text: 'Start a new game' },
+          { icon: BarChart3, text: 'Switch difficulty level' },
+          { icon: Users, text: 'Change opponent (AI or friend)' },
+        ].map((item, i) => {
+          const IconComponent = item.icon;
+          return (
           <div
             key={i}
             className="flex items-center gap-3"
@@ -223,11 +225,11 @@ function StepTip() {
                 height: 28,
                 backgroundColor: 'var(--color-surface)',
                 border: '1px solid var(--color-border)',
-                fontSize: 13,
                 flexShrink: 0,
+                color: 'var(--color-text)',
               }}
             >
-              {item.icon}
+              <IconComponent size={14} strokeWidth={2} />
             </span>
             <span
               style={{
@@ -239,7 +241,8 @@ function StepTip() {
               {item.text}
             </span>
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );
@@ -464,7 +467,7 @@ export default function IntroScreen({ onDone }) {
                 onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-border-strong)'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--color-border)'}
               >
-                <span style={{ fontSize: 14 }}>‹</span>
+                <ChevronLeft size={14} strokeWidth={2.5} />
                 Prev
               </button>
             )}
@@ -488,7 +491,7 @@ export default function IntroScreen({ onDone }) {
               }}
             >
               {isLast ? 'Start playing' : 'Next'}
-              <span style={{ fontSize: 14 }}>{isLast ? '→' : '›'}</span>
+              {isLast ? <ArrowRight size={14} strokeWidth={2.5} /> : <ChevronRight size={14} strokeWidth={2.5} />}
             </button>
           </div>
 
