@@ -1,0 +1,156 @@
+import Session from '../models/Session.js';
+import User from '../models/User.js';
+import { verifyGoogleIdToken } from '../services/googleAuthService.js';
+import { checkWinner } from '../utils/gameLogic.js';
+
+/**
+ * Game Socket Handler with Production Hardening
+ */
+export const initGameSocket = (io) => {
+  // 1. Socket Authentication Middleware
+  io.use(async (socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error('Authentication error: Token missing'));
+
+    try {
+      const googleUser = await verifyGoogleIdToken(token);
+      let user = await User.findOne({ google_id: googleUser.google_id });
+      
+      if (!user) {
+        user = await User.create(googleUser);
+      }
+      
+      socket.user = user; // Attach user to socket
+      next();
+    } catch (error) {
+      console.error('Socket Auth Error:', error.message);
+      next(new Error('Authentication error: Invalid token'));
+    }
+  });
+
+  io.on('connection', (socket) => {
+    const userId = socket.user._id.toString();
+    console.log(`User connected: ${socket.user.name} (${socket.id})`);
+
+    /**
+     * Join Room / Reconnection Logic
+     */
+    socket.on('join_room', async ({ sessionId }) => {
+      if (!sessionId) return;
+      const roomName = `session_${sessionId}`;
+      
+      socket.join(roomName);
+      console.log(`User ${socket.user.name} joined room: ${roomName}`);
+
+      try {
+        const session = await Session.findById(sessionId)
+          .populate('host_id', 'name email avatar_url')
+          .populate('guest_id', 'name email avatar_url');
+
+        if (session) {
+          // Send latest state immediately to sync client
+          socket.emit('game_update', {
+            board: session.board,
+            current_turn: session.current_turn,
+            status: session.status,
+            winner: session.winner,
+            host: session.host_id,
+            guest: session.guest_id,
+            x_moves: session.x_moves,
+            o_moves: session.o_moves,
+          });
+        }
+      } catch (error) {
+        console.error('Error in join_room:', error);
+      }
+    });
+
+    /**
+     * Authoritative Player Move
+     */
+    socket.on('player_move', async ({ sessionId, cellIndex }) => {
+      const roomName = `session_${sessionId}`;
+
+      try {
+        // Fetch latest session from DB to prevent race conditions
+        const session = await Session.findById(sessionId);
+
+        // Validation
+        if (!session) return socket.emit('invalid_move', { reason: 'Session not found' });
+        if (session.status !== 'active') return socket.emit('invalid_move', { reason: 'Game is not active' });
+        if (session.board[cellIndex] !== '') return socket.emit('invalid_move', { reason: 'Cell occupied' });
+
+        const isHost = session.host_id.toString() === userId;
+        const isGuest = session.guest_id?.toString() === userId;
+        if (!isHost && !isGuest) return socket.emit('invalid_move', { reason: 'Not a participant' });
+
+        const playerSymbol = isHost ? 'X' : 'O';
+        if (session.current_turn !== playerSymbol) {
+          return socket.emit('invalid_move', { reason: 'Not your turn' });
+        }
+
+        // Apply authoritative game logic (with vanishing pieces rule)
+        const moves = playerSymbol === 'X' ? session.x_moves : session.o_moves;
+        
+        // If player already has 3 pieces, remove the oldest one
+        if (moves.length >= 3) {
+          const oldestIndex = moves.shift(); // Remove from tracking array
+          session.board[oldestIndex] = '';   // Clear from board
+        }
+
+        // Add new move
+        session.board[cellIndex] = playerSymbol;
+        moves.push(cellIndex);
+        
+        // Ensure Mongoose detects changes in arrays
+        session.markModified('board');
+        session.markModified('x_moves');
+        session.markModified('o_moves');
+
+        const result = checkWinner(session.board);
+        if (result) {
+          session.status = 'finished';
+          session.winner = result;
+        } else {
+          session.current_turn = playerSymbol === 'X' ? 'O' : 'X';
+        }
+
+        await session.save();
+
+        // Broadcast updates
+        // Re-fetch populated session for broadcast
+        const updatedSession = await Session.findById(sessionId)
+          .populate('host_id', 'name email avatar_url')
+          .populate('guest_id', 'name email avatar_url');
+
+        if (session.status === 'finished') {
+          io.to(roomName).emit('game_over', {
+            winner: updatedSession.winner,
+            board: updatedSession.board,
+            x_moves: updatedSession.x_moves,
+            o_moves: updatedSession.o_moves,
+            host: updatedSession.host_id,
+            guest: updatedSession.guest_id,
+          });
+        } else {
+          io.to(roomName).emit('game_update', {
+            board: updatedSession.board,
+            current_turn: updatedSession.current_turn,
+            status: updatedSession.status,
+            x_moves: updatedSession.x_moves,
+            o_moves: updatedSession.o_moves,
+            host: updatedSession.host_id,
+            guest: updatedSession.guest_id,
+          });
+        }
+      } catch (error) {
+        console.error('Error in player_move:', error);
+        socket.emit('invalid_move', { reason: 'Server error' });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log(`User disconnected: ${socket.user.name} (${socket.id})`);
+    });
+  });
+};

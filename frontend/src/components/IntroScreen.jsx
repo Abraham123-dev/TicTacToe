@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trophy, ArrowRight, Settings, ArrowUp, RotateCcw, BarChart3, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { showToast } from './Toast';
 
 const TITLE_LETTERS = 'TIC-TAC-TOE'.split('');
 
@@ -248,85 +248,146 @@ function StepTip() {
   );
 }
 
-function StepReady({ mode, onModeChange, difficulty, onDifficultyChange }) {
+function StepReady({ mode, onModeChange, difficulty, onDifficultyChange, onJoinSession, onCreateSession }) {
+  const [joinId, setJoinId] = useState('');
+  const [isLogged, setIsLogged] = useState(!!localStorage.getItem('google_id_token'));
+
+  useEffect(() => {
+    /* global google */
+    if (window.google && !isLogged) {
+      google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '991662172024-3udk83a7hgq0mrd1308rn6lkmb7nmtbb.apps.googleusercontent.com',
+        callback: (response) => {
+          localStorage.setItem('google_id_token', response.credential);
+          setIsLogged(true);
+          showToast('Signed in successfully!', 'success');
+        },
+      });
+      google.accounts.id.renderButton(
+        document.getElementById('google-login-btn'),
+        { theme: 'outline', size: 'large', shape: 'pill' }
+      );
+    }
+  }, [isLogged]);
+
   return (
     <div key="ready" style={{ animation: 'step-enter 0.4s ease-out' }} className="flex flex-col items-center gap-6 text-center">
-      <div className="flex flex-col gap-1 items-center">
-        <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)' }}>
-          Who are you playing against?
-        </h2>
-        <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)' }}>
-          You play as X
-        </p>
-      </div>
+      {!isLogged ? (
+        <div className="flex flex-col gap-4 items-center">
+           <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)' }}>
+            Sign in to play online
+          </h2>
+          <div id="google-login-btn"></div>
+        </div>
+      ) : (
+        <>
+          <div className="flex flex-col gap-1 items-center">
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)' }}>
+              Choose your game mode
+            </h2>
+          </div>
 
-      {/* Mode selector */}
-      <div
-        className="flex rounded-lg border overflow-hidden"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
-        {[
-          { value: 'ai',    label: 'vs AI',     sub: 'Minimax engine' },
-          { value: 'human', label: 'vs Friend',  sub: 'Same device' },
-        ].map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => onModeChange(opt.value)}
-            className="flex flex-col items-center px-6 py-3 text-sm font-medium transition-colors duration-100"
-            style={{
-              fontFamily: 'var(--font-sans)',
-              backgroundColor: mode === opt.value ? 'var(--color-text)' : 'var(--color-surface)',
-              color: mode === opt.value ? 'var(--color-bg)' : 'var(--color-muted)',
-              border: 'none',
-              cursor: 'pointer',
-              borderRight: opt.value === 'ai' ? '1px solid var(--color-border)' : 'none',
-              minWidth: 110,
-            }}
-          >
-            <span style={{ fontWeight: 600 }}>{opt.label}</span>
-            <span style={{ fontSize: '0.7rem', opacity: 0.7, marginTop: 2 }}>{opt.sub}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Difficulty selector — only shown when vs AI */}
-      {mode === 'ai' && (
-        <div
-          className="flex flex-col items-center gap-3"
-          style={{ animation: 'step-enter 0.3s ease-out' }}
-        >
-          <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
-            Difficulty
-          </p>
+          {/* Mode selector */}
           <div
             className="flex rounded-lg border overflow-hidden"
             style={{ borderColor: 'var(--color-border)' }}
           >
             {[
-              { value: 'easy',   label: 'Easy',   sub: 'Forgiving' },
-              { value: 'medium', label: 'Medium', sub: 'Balanced' },
-              { value: 'hard',   label: 'Hard',   sub: 'Ruthless' },
+              { value: 'ai',          label: 'vs AI',     sub: 'Minimax' },
+              { value: 'human',       label: 'vs Friend',  sub: 'Local' },
+              { value: 'multiplayer', label: 'Online',     sub: 'Multiplayer' },
             ].map((opt, i, arr) => (
               <button
                 key={opt.value}
-                onClick={() => onDifficultyChange(opt.value)}
-                className="flex flex-col items-center px-5 py-2.5 text-sm font-medium transition-colors duration-100"
+                onClick={() => onModeChange(opt.value)}
+                className="flex flex-col items-center px-4 py-3 text-sm font-medium transition-colors duration-100"
                 style={{
                   fontFamily: 'var(--font-sans)',
-                  backgroundColor: difficulty === opt.value ? 'var(--color-text)' : 'var(--color-surface)',
-                  color: difficulty === opt.value ? 'var(--color-bg)' : 'var(--color-muted)',
+                  backgroundColor: mode === opt.value ? 'var(--color-text)' : 'var(--color-surface)',
+                  color: mode === opt.value ? 'var(--color-bg)' : 'var(--color-muted)',
                   border: 'none',
                   cursor: 'pointer',
                   borderRight: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
                   minWidth: 90,
                 }}
               >
-                <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{opt.label}</span>
-                <span style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: 2 }}>{opt.sub}</span>
+                <span style={{ fontWeight: 600 }}>{opt.label}</span>
+                <span style={{ fontSize: '0.6rem', opacity: 0.7, marginTop: 2 }}>{opt.sub}</span>
               </button>
             ))}
           </div>
-        </div>
+
+          {/* Multiplayer UI */}
+          {mode === 'multiplayer' && (
+            <div className="flex flex-col gap-4 items-center w-full max-w-[280px]" style={{ animation: 'step-enter 0.3s ease-out' }}>
+              <button 
+                onClick={onCreateSession}
+                className="w-full py-3 rounded-lg border font-bold transition-all hover:opacity-90"
+                style={{ backgroundColor: 'var(--color-text)', color: 'var(--color-bg)', cursor: 'pointer', border: 'none' }}
+              >
+                Create New Room
+              </button>
+              
+              <div className="flex items-center gap-2 w-full">
+                <input 
+                  type="text" 
+                  placeholder="Enter Room ID"
+                  value={joinId}
+                  onChange={(e) => setJoinId(e.target.value.toUpperCase())}
+                  className="flex-1 px-4 py-3 rounded-lg border bg-transparent"
+                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-text)', fontFamily: 'var(--font-sans)' }}
+                />
+                <button 
+                  onClick={() => onJoinSession(joinId)}
+                  className="px-4 py-3 rounded-lg border font-bold"
+                  style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)', cursor: 'pointer' }}
+                >
+                  Join
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Difficulty selector — only shown when vs AI */}
+          {mode === 'ai' && (
+            <div
+              className="flex flex-col items-center gap-3"
+              style={{ animation: 'step-enter 0.3s ease-out' }}
+            >
+              <p style={{ fontSize: '0.8rem', color: 'var(--color-muted)', fontFamily: 'var(--font-sans)', letterSpacing: '0.04em', textTransform: 'uppercase', fontWeight: 600 }}>
+                Difficulty
+              </p>
+              <div
+                className="flex rounded-lg border overflow-hidden"
+                style={{ borderColor: 'var(--color-border)' }}
+              >
+                {[
+                  { value: 'easy',   label: 'Easy',   sub: 'Forgiving' },
+                  { value: 'medium', label: 'Medium', sub: 'Balanced' },
+                  { value: 'hard',   label: 'Hard',   sub: 'Ruthless' },
+                ].map((opt, i, arr) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => onDifficultyChange(opt.value)}
+                    className="flex flex-col items-center px-5 py-2.5 text-sm font-medium transition-colors duration-100"
+                    style={{
+                      fontFamily: 'var(--font-sans)',
+                      backgroundColor: difficulty === opt.value ? 'var(--color-text)' : 'var(--color-surface)',
+                      color: difficulty === opt.value ? 'var(--color-bg)' : 'var(--color-muted)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      borderRight: i < arr.length - 1 ? '1px solid var(--color-border)' : 'none',
+                      minWidth: 90,
+                    }}
+                  >
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{opt.label}</span>
+                    <span style={{ fontSize: '0.65rem', opacity: 0.7, marginTop: 2 }}>{opt.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -378,8 +439,10 @@ function StepIntro() {
   );
 }
 
-export default function IntroScreen({ onDone }) {
-  const [stepIndex, setStepIndex] = useState(0);
+export default function IntroScreen({ onDone, onCreateSession, onJoinSession }) {
+  const [stepIndex, setStepIndex] = useState(() => {
+    return localStorage.getItem('hasSeenIntro') === 'true' ? STEPS.indexOf('ready') : 0;
+  });
   const [mode, setMode] = useState('ai');
   const [difficulty, setDifficulty] = useState('medium');
   const step = STEPS[stepIndex];
@@ -395,6 +458,7 @@ export default function IntroScreen({ onDone }) {
 
   function handleNext() {
     if (isLast) {
+      localStorage.setItem('hasSeenIntro', 'true');
       onDone(mode, difficulty);
     } else {
       setStepIndex(i => i + 1);
@@ -424,7 +488,16 @@ export default function IntroScreen({ onDone }) {
         {step === 'rule-1' && <StepRule1 />}
         {step === 'rule-2' && <StepRule2 />}
         {step === 'tip'    && <StepTip />}
-        {step === 'ready'  && <StepReady mode={mode} onModeChange={setMode} difficulty={difficulty} onDifficultyChange={setDifficulty} />}
+        {step === 'ready'  && (
+          <StepReady 
+            mode={mode} 
+            onModeChange={setMode} 
+            difficulty={difficulty} 
+            onDifficultyChange={setDifficulty} 
+            onCreateSession={onCreateSession}
+            onJoinSession={onJoinSession}
+          />
+        )}
       </div>
 
       {/* Navigation — hidden on intro (auto-advances) */}
