@@ -6,7 +6,7 @@ import { verifyGoogleIdToken } from '../services/googleAuthService.js';
  * Verifies token, creates or updates user, and returns user data.
  */
 export const googleAuth = async (req, res) => {
-  const { id_token } = req.body;
+  const { id_token } = req.body || {};
 
   if (!id_token) {
     return res.status(400).json({ error: 'id_token is required' });

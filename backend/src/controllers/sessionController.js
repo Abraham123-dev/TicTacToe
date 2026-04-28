@@ -4,7 +4,7 @@ import * as sessionService from '../services/sessionService.js';
  * Controller to create a new session.
  */
 export const createSession = async (req, res) => {
-  const { userId } = req.body;
+  const { userId } = req.body || {};
 
   if (!userId) {
     return res.status(400).json({ error: 'userId is required' });
@@ -22,7 +22,7 @@ export const createSession = async (req, res) => {
  * Controller to join an existing session.
  */
 export const joinSession = async (req, res) => {
-  const { sessionId, userId } = req.body;
+  const { sessionId, userId } = req.body || {};
 
   if (!sessionId || !userId) {
     return res.status(400).json({ error: 'sessionId and userId are required' });
