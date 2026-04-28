@@ -6,12 +6,19 @@ import Session from '../models/Session.js';
  * @returns {Promise<Object>} The created session.
  */
 export const createSession = async (userId) => {
-  const session = await Session.create({
-    host_id: userId,
-    board: Array(9).fill(''),
-    status: 'waiting',
-  });
-  return session;
+  console.log(`[SERVICE] Creating session in DB for user: ${userId}`);
+  try {
+    const session = await Session.create({
+      host_id: userId,
+      board: Array(9).fill(''),
+      status: 'waiting',
+    });
+    console.log(`[SERVICE] Session successfully created in DB: ${session._id}`);
+    return session;
+  } catch (error) {
+    console.error(`[SERVICE] Error creating session in DB: ${error.message}`);
+    throw error;
+  }
 };
 
 /**

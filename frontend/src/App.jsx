@@ -365,9 +365,42 @@ export default function App() {
         <ScoreBoard scores={scores} onReset={handleResetScores} gameMode={gameMode} />
         
         {sessionId && gameMode === 'multiplayer' && (
-          <p className="text-xs text-muted-foreground opacity-50 mt-4">
-            Session ID: <span className="font-mono">{sessionId}</span>
-          </p>
+          <div 
+            className="flex flex-col items-center gap-2 mt-6 px-4 py-3 rounded-xl border animate-in fade-in slide-in-from-bottom-4 duration-500"
+            style={{ 
+              backgroundColor: 'var(--color-surface)', 
+              borderColor: 'var(--color-border)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+            }}
+          >
+            <span style={{ fontSize: '0.7rem', color: 'var(--color-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Room ID
+            </span>
+            <div className="flex items-center gap-3">
+              <span 
+                className="font-mono font-bold" 
+                style={{ fontSize: '1.2rem', color: 'var(--color-text)', letterSpacing: '0.1em' }}
+              >
+                {sessionId}
+              </span>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(sessionId);
+                  showToast('Room ID copied!', 'success');
+                }}
+                className="p-2 rounded-md transition-colors"
+                style={{ 
+                  backgroundColor: 'var(--color-bg)', 
+                  border: '1px solid var(--color-border-strong)',
+                  cursor: 'pointer'
+                }}
+                title="Copy Room ID"
+              >
+                <span style={{ fontSize: 14 }}>📋</span>
+              </button>
+            </div>
+            <p className="text-[10px] opacity-40 italic">Share this code with your friend to play together</p>
+          </div>
         )}
       </main>
     </>

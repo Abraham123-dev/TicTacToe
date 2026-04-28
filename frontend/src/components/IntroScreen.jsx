@@ -437,7 +437,7 @@ function StepIntro() {
   );
 }
 
-export default function IntroScreen({ onDone }) {
+export default function IntroScreen({ onDone, onCreateSession, onJoinSession }) {
   const [stepIndex, setStepIndex] = useState(0);
   const [mode, setMode] = useState('ai');
   const [difficulty, setDifficulty] = useState('medium');
@@ -483,7 +483,16 @@ export default function IntroScreen({ onDone }) {
         {step === 'rule-1' && <StepRule1 />}
         {step === 'rule-2' && <StepRule2 />}
         {step === 'tip'    && <StepTip />}
-        {step === 'ready'  && <StepReady mode={mode} onModeChange={setMode} difficulty={difficulty} onDifficultyChange={setDifficulty} />}
+        {step === 'ready'  && (
+          <StepReady 
+            mode={mode} 
+            onModeChange={setMode} 
+            difficulty={difficulty} 
+            onDifficultyChange={setDifficulty} 
+            onCreateSession={onCreateSession}
+            onJoinSession={onJoinSession}
+          />
+        )}
       </div>
 
       {/* Navigation — hidden on intro (auto-advances) */}
