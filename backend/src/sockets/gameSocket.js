@@ -82,9 +82,24 @@ export const initGameSocket = (io) => {
           return socket.emit('invalid_move', { reason: 'Not your turn' });
         }
 
-        // Apply atomic-like update
-        session.board[cellIndex] = playerSymbol;
+        // Apply authoritative game logic (with vanishing pieces rule)
+        const moves = playerSymbol === 'X' ? session.x_moves : session.o_moves;
         
+        // If player already has 3 pieces, remove the oldest one
+        if (moves.length >= 3) {
+          const oldestIndex = moves.shift(); // Remove from tracking array
+          session.board[oldestIndex] = '';   // Clear from board
+        }
+
+        // Add new move
+        session.board[cellIndex] = playerSymbol;
+        moves.push(cellIndex);
+        
+        // Ensure Mongoose detects changes in arrays
+        session.markModified('board');
+        session.markModified('x_moves');
+        session.markModified('o_moves');
+
         const result = checkWinner(session.board);
         if (result) {
           session.status = 'finished';
@@ -95,20 +110,21 @@ export const initGameSocket = (io) => {
 
         await session.save();
 
-        // Log the move
-        console.log(`[MOVE] Session: ${sessionId}, User: ${userId}, Cell: ${cellIndex}, Result: ${result || 'continue'}`);
-
         // Broadcast updates
         if (session.status === 'finished') {
           io.to(roomName).emit('game_over', {
             winner: session.winner,
             board: session.board,
+            x_moves: session.x_moves,
+            o_moves: session.o_moves,
           });
         } else {
           io.to(roomName).emit('game_update', {
             board: session.board,
             current_turn: session.current_turn,
             status: session.status,
+            x_moves: session.x_moves,
+            o_moves: session.o_moves,
           });
         }
       } catch (error) {

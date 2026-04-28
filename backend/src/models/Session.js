@@ -28,6 +28,14 @@ const sessionSchema = new mongoose.Schema({
       message: 'Board must have exactly 9 cells.',
     },
   },
+  x_moves: {
+    type: [Number],
+    default: [],
+  },
+  o_moves: {
+    type: [Number],
+    default: [],
+  },
   current_turn: {
     type: String,
     enum: ['X', 'O'],

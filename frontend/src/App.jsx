@@ -10,6 +10,7 @@ import ToastContainer, { showToast } from './components/Toast';
 import HintAssistant from './components/HintAssistant';
 import { checkWinner, placeMarkWithVanish } from './utils/gameUtils';
 import { getAIMove, getHintForPlayer } from './utils/aiUtils';
+import { socket, connectSocket } from './utils/socket';
 
 const INITIAL_STATE = {
   board: Array(9).fill(null),
@@ -23,19 +24,82 @@ const INITIAL_STATE = {
 
 export default function App() {
   const [showIntro, setShowIntro] = useState(true);
-  const [gameMode, setGameMode] = useState('ai'); // 'ai' | 'human'
-  const [difficulty, setDifficulty] = useState('medium'); // 'easy' | 'medium' | 'hard'
+  const [gameMode, setGameMode] = useState('ai'); // 'ai' | 'human' | 'multiplayer'
+  const [difficulty, setDifficulty] = useState('medium');
   const [game, setGame] = useState(INITIAL_STATE);
   const [scores, setScores] = useState({ X: 0, O: 0 });
   const [startPlayer, setStartPlayer] = useState('X');
   const [isAIThinking, setIsAIThinking] = useState(false);
   const [hint, setHint] = useState(null);
   const [isHintThinking, setIsHintThinking] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
 
   const AI_DEPTH = { easy: 1, medium: 3, hard: 5 };
 
+  // Socket synchronization
+  useEffect(() => {
+    if (gameMode !== 'multiplayer') return;
+
+    connectSocket();
+
+    socket.on('connect', () => {
+      if (sessionId) {
+        socket.emit('join_room', { sessionId });
+      }
+    });
+
+    socket.on('game_update', (data) => {
+      setGame(prev => ({
+        ...prev,
+        board: data.board.map(c => c === '' ? null : c),
+        currentPlayer: data.current_turn,
+        xMoves: data.x_moves || [],
+        oMoves: data.o_moves || [],
+        winner: null,
+        isDraw: false,
+      }));
+    });
+
+    socket.on('game_over', (data) => {
+      setGame(prev => ({
+        ...prev,
+        board: data.board.map(c => c === '' ? null : c),
+        winner: data.winner === 'draw' ? null : data.winner,
+        isDraw: data.winner === 'draw',
+        xMoves: data.x_moves || [],
+        oMoves: data.o_moves || [],
+      }));
+      if (data.winner && data.winner !== 'draw') {
+        setScores(s => ({ ...s, [data.winner]: s[data.winner] + 1 }));
+      }
+    });
+
+    socket.on('invalid_move', ({ reason }) => {
+      showToast(reason, 'error');
+    });
+
+    return () => {
+      socket.off('game_update');
+      socket.off('game_over');
+      socket.off('invalid_move');
+      socket.off('connect');
+    };
+  }, [gameMode, sessionId]);
+
   const handleCellClick = useCallback((index) => {
-    setHint(null); // clear hint on any move
+    setHint(null);
+
+    // Multiplayer Mode: Hand off to server
+    if (gameMode === 'multiplayer') {
+      if (!sessionId) return;
+      socket.emit('player_move', {
+        sessionId,
+        cellIndex: index,
+      });
+      return;
+    }
+
+    // Local Logic (AI or Human)
     setGame(prev => {
       if (prev.board[index] !== null || prev.winner || prev.isDraw) return prev;
 
@@ -71,7 +135,7 @@ export default function App() {
         winningLine: null,
       };
     });
-  }, []);
+  }, [gameMode, sessionId]);
 
   // AI move trigger
   useEffect(() => {
@@ -87,23 +151,30 @@ export default function App() {
     }, 550);
 
     return () => { clearTimeout(timer); setIsAIThinking(false); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.currentPlayer, game.winner, game.isDraw, gameMode]);
+  }, [game.currentPlayer, game.winner, game.isDraw, gameMode, difficulty, handleCellClick]);
 
   const handlePlayAgain = useCallback(() => {
+    if (gameMode === 'multiplayer') {
+      showToast('New game must be started via session reset', 'info');
+      return;
+    }
     const nextStart = startPlayer === 'X' ? 'O' : 'X';
     setStartPlayer(nextStart);
     setGame({ ...INITIAL_STATE, board: Array(9).fill(null), currentPlayer: nextStart });
     setIsAIThinking(false);
-  }, [startPlayer]);
+  }, [startPlayer, gameMode]);
 
   const handleNewGame = useCallback(() => {
+    if (gameMode === 'multiplayer') {
+       showToast('Session logic required for reset', 'info');
+       return;
+    }
     setStartPlayer('X');
     setGame({ ...INITIAL_STATE });
     setIsAIThinking(false);
     setHint(null);
     showToast('New game started', 'info');
-  }, []);
+  }, [gameMode]);
 
   const handleModeChange = useCallback((newMode) => {
     if (newMode === gameMode) return;
@@ -113,7 +184,7 @@ export default function App() {
     setIsAIThinking(false);
     setHint(null);
     showToast(
-      newMode === 'ai' ? 'Switched to vs AI' : 'Switched to vs Friend',
+      newMode === 'ai' ? 'Switched to vs AI' : 'Switched to Friend',
       'info',
     );
   }, [gameMode]);
@@ -147,7 +218,6 @@ export default function App() {
     if (game.winner || game.isDraw) return;
     if (game.currentPlayer !== 'X') return;
     setIsHintThinking(true);
-    // Small delay so the "Analyzing" state is visible
     setTimeout(() => {
       const result = getHintForPlayer(game.board, game.xMoves, game.oMoves);
       setHint(result);
@@ -160,7 +230,6 @@ export default function App() {
   }, []);
 
   const gameOver = !!(game.winner || game.isDraw);
-  // Block human clicks when it's AI's turn
   const boardDisabled = gameOver || (gameMode === 'ai' && game.currentPlayer === 'O');
 
   if (showIntro) {
@@ -168,7 +237,12 @@ export default function App() {
       <>
         <ThemeToggle />
         <ToastContainer />
-        <IntroScreen onDone={(mode, diff) => { setGameMode(mode); setDifficulty(diff || 'medium'); setShowIntro(false); }} />
+        <IntroScreen onDone={(mode, diff, sid) => { 
+          setGameMode(mode); 
+          setDifficulty(diff || 'medium'); 
+          if (sid) setSessionId(sid);
+          setShowIntro(false); 
+        }} />
       </>
     );
   }
@@ -210,7 +284,6 @@ export default function App() {
           hintCell={hint ? hint.move : null}
         />
 
-        {/* AI Coach — show when vs AI, it's player's turn, and game is not over */}
         {gameMode === 'ai' && game.currentPlayer === 'X' && !gameOver && (
           <HintAssistant
             hint={hint}
@@ -232,6 +305,12 @@ export default function App() {
         <div style={{ width: 1, height: 20 }} />
 
         <ScoreBoard scores={scores} onReset={handleResetScores} gameMode={gameMode} />
+        
+        {sessionId && gameMode === 'multiplayer' && (
+          <p className="text-xs text-muted-foreground opacity-50 mt-4">
+            Session ID: <span className="font-mono">{sessionId}</span>
+          </p>
+        )}
       </main>
     </>
   );
