@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { showToast } from './Toast';
 
 const TITLE_LETTERS = 'TIC-TAC-TOE'.split('');
 
@@ -249,13 +250,23 @@ function StepReady({ mode, onModeChange, difficulty, onDifficultyChange, onJoinS
   const [joinId, setJoinId] = useState('');
   const [isLogged, setIsLogged] = useState(!!localStorage.getItem('google_id_token'));
 
-  const handleLoginMock = () => {
-    // This is where real Google Login logic would go
-    const mockToken = 'mock_id_token';
-    localStorage.setItem('google_id_token', mockToken);
-    setIsLogged(true);
-    showToast('Logged in (Mock)', 'success');
-  };
+  useEffect(() => {
+    /* global google */
+    if (window.google && !isLogged) {
+      google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '991662172024-3udk83a7hgq0mrd1308rn6lkmb7nmtbb.apps.googleusercontent.com',
+        callback: (response) => {
+          localStorage.setItem('google_id_token', response.credential);
+          setIsLogged(true);
+          showToast('Signed in successfully!', 'success');
+        },
+      });
+      google.accounts.id.renderButton(
+        document.getElementById('google-login-btn'),
+        { theme: 'outline', size: 'large', shape: 'pill' }
+      );
+    }
+  }, [isLogged]);
 
   return (
     <div key="ready" style={{ animation: 'step-enter 0.4s ease-out' }} className="flex flex-col items-center gap-6 text-center">
@@ -264,14 +275,7 @@ function StepReady({ mode, onModeChange, difficulty, onDifficultyChange, onJoinS
            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text)', letterSpacing: '-0.02em', fontFamily: 'var(--font-sans)' }}>
             Sign in to play online
           </h2>
-          <button 
-            onClick={handleLoginMock}
-            className="flex items-center gap-3 px-6 py-3 rounded-lg border font-medium text-sm transition-all hover:scale-105"
-            style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)', color: 'var(--color-text)', cursor: 'pointer' }}
-          >
-            <span style={{ fontSize: 18 }}>G</span>
-            Login with Google
-          </button>
+          <div id="google-login-btn"></div>
         </div>
       ) : (
         <>

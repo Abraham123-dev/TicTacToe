@@ -204,14 +204,17 @@ export default function App() {
 
   const handleCreateSession = useCallback(async () => {
     try {
+      const token = localStorage.getItem('google_id_token');
+      console.log('Creating session with token:', token?.substring(0, 10) + '...');
       const res = await fetch(`${API_URL}/api/session/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('google_id_token')}`,
+          'Authorization': `Bearer ${token}`,
         },
       });
       const data = await res.json();
+      console.log('Create session response:', data);
       if (res.ok) {
         setSessionId(data._id);
         setGameMode('multiplayer');

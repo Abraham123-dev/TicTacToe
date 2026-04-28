@@ -6,18 +6,16 @@ const SOCKET_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
  * Centralized Socket.io instance
  */
 export const socket = io(SOCKET_URL, {
-  autoConnect: false, // Don't connect until we have a token
-  auth: (cb) => {
-    cb({
-      token: localStorage.getItem('google_id_token'),
-    });
-  },
+  autoConnect: false,
 });
 
 /**
- * Helper to connect the socket
+ * Helper to connect the socket with current token
  */
 export const connectSocket = () => {
+  const token = localStorage.getItem('google_id_token');
+  socket.auth = { token };
+  
   if (!socket.connected) {
     socket.connect();
   }
