@@ -34,12 +34,16 @@ export const joinSession = async (sessionId, userId) => {
     throw { status: 404, message: 'Session not found' };
   }
 
-  if (session.guest_id) {
-    throw { status: 409, message: 'Session already full' };
+  // If the user is already the host or the guest, just return the session (allow re-joining)
+  const isHost = session.host_id.toString() === userId;
+  const isGuest = session.guest_id?.toString() === userId;
+
+  if (isHost || isGuest) {
+    return session;
   }
 
-  if (session.host_id.toString() === userId) {
-    throw { status: 400, message: 'Host cannot join their own session as a guest' };
+  if (session.guest_id) {
+    throw { status: 409, message: 'Session already full' };
   }
 
   session.guest_id = userId;

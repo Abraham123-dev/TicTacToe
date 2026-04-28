@@ -10,7 +10,7 @@ const nanoid = customAlphabet('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 4);
 const sessionSchema = new mongoose.Schema({
   _id: {
     type: String,
-    default: () => nanoid(6), // Custom short unique ID
+    default: () => nanoid(), // Custom short unique ID
   },
   host_id: {
     type: mongoose.Schema.Types.ObjectId,

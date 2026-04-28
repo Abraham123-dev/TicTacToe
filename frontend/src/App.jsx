@@ -438,16 +438,41 @@ export default function App() {
                 <span className="text-[10px] font-bold uppercase opacity-50 tracking-wider">Room Code</span>
                 <span className="font-mono font-bold text-lg" style={{ color: 'var(--color-text)' }}>{sessionId}</span>
               </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(sessionId);
-                  showToast('Code copied!', 'success');
-                }}
-                className="p-2 rounded-lg transition-all hover:scale-105 active:scale-95"
-                style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border-strong)', cursor: 'pointer' }}
-              >
-                <span style={{ fontSize: 16 }}>📋</span>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    const fullUrl = `${window.location.origin}${window.location.pathname}?room=${sessionId}`;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'Play Tic-Tac-Toe with me!',
+                        text: `Join my room ${sessionId} and let's play!`,
+                        url: fullUrl,
+                      }).catch(() => {});
+                    } else {
+                      navigator.clipboard.writeText(fullUrl);
+                      showToast('Invite link copied!', 'success');
+                    }
+                  }}
+                  className="p-2 rounded-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+                  style={{ backgroundColor: 'var(--color-text)', color: 'var(--color-bg)', border: 'none', cursor: 'pointer' }}
+                  title="Share Invite Link"
+                >
+                  <span style={{ fontSize: 14 }}>🔗</span>
+                  <span className="text-[10px] font-bold uppercase">Share Link</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(sessionId);
+                    showToast('Code copied!', 'success');
+                  }}
+                  className="p-2 rounded-lg transition-all hover:scale-105 active:scale-95"
+                  style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border-strong)', cursor: 'pointer' }}
+                  title="Copy Room ID"
+                >
+                  <span style={{ fontSize: 16 }}>📋</span>
+                </button>
+              </div>
             </div>
 
             {/* Live Activity Log */}
