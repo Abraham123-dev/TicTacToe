@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { ChevronRight, ChevronLeft, ArrowRight, ArrowUp, Trophy, Settings, RotateCcw, BarChart3, Users } from 'lucide-react';
 import { showToast } from './Toast';
 
 const TITLE_LETTERS = 'TIC-TAC-TOE'.split('');

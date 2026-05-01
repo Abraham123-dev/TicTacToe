@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 /* ── Light theme (default) ── */
-@theme {
+:root {
   --color-bg: #e8e8e2;
   --color-surface: #efefe9;
   --color-cell: #efefe9;
