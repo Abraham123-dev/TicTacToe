@@ -11,3 +11,4 @@ createRoot(document.getElementById('root')).render(
     {path === '/' ? <App /> : <NotFound />}
   </StrictMode>,
 )
+
